@@ -10,16 +10,17 @@ import { Transaction } from '@/types/transaction';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogIn } from 'lucide-react';
 
 function NewTransactionPageContent() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  
   const { showToast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Obtener parámetros de la URL
   const urlType = searchParams.get('type') as 'ingreso' | 'gasto' | null;
@@ -32,7 +33,10 @@ function NewTransactionPageContent() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const [accountsData, categoriesData] = await Promise.all([
@@ -76,12 +80,46 @@ function NewTransactionPageContent() {
     router.push('/transactions');
   };
 
-  if (loading) {
+  // Mostrar loading solo si authLoading es true
+  if (authLoading) {
     return (
       <div className="p-4">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-card rounded"></div>
           <div className="h-64 bg-card rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Validar si el usuario está autenticado
+  if (!user) {
+    return (
+      <div className="p-4">
+        <div className="flex items-center gap-3 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push('/')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold">Nueva Transacción</h1>
+        </div>
+        
+        <div className="bg-card border border-border rounded-lg p-8 text-center">
+          <LogIn className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Inicia sesión requerido</h2>
+          <p className="text-muted-foreground mb-6">
+            Para crear una transacción, primero debes iniciar sesión en tu cuenta.
+          </p>
+          <Button 
+            onClick={() => router.push('/login')}
+            className="flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            Ir al Login
+          </Button>
         </div>
       </div>
     );

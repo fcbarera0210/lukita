@@ -22,9 +22,10 @@ export function AutoLogin() {
 
   // Auto login cuando no hay usuario (solo si no está deshabilitado)
   useEffect(() => {
-    if (!loading && !user && !autoLoginDisabled) {
-      handleAutoLogin();
-    }
+    // Deshabilitado temporalmente para evitar errores de credenciales
+    // if (!loading && !user && !autoLoginDisabled) {
+    //   handleAutoLogin();
+    // }
   }, [loading, user, autoLoginDisabled]);
 
   // Deshabilitar auto-login si el usuario hizo logout manualmente

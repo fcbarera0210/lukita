@@ -12,23 +12,55 @@ import {
   User 
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { auth, db } from './firebase';
 import { UserSettings } from '@/types/user';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(loading);
+
+  // Mantener la referencia actualizada
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+      if (isMounted) {
+        setUser(user);
+        setLoading(false);
+        
+        // Limpiar timeout si ya se resolvió la autenticación
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      }
     });
 
-    return unsubscribe;
-  }, []);
+    // Timeout de 3 segundos para evitar carga infinita (solo en cliente)
+    if (typeof window !== 'undefined') {
+      timeoutId = setTimeout(() => {
+        if (isMounted && loadingRef.current) {
+          setLoading(false);
+          setUser(null);
+        }
+      }, 3000);
+    }
 
+    return () => {
+      isMounted = false;
+      unsubscribe();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []); // Sin dependencias para evitar loops
   return { user, loading };
 };
 

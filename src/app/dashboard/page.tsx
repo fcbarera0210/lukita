@@ -88,6 +88,12 @@ export default function DashboardPage() {
           endDate.getTime()
         );
 
+        // Cargar transacciones recientes del mes seleccionado (últimas 5)
+        const recentMonthlyTransactions = monthlyTransactions
+          .sort((a, b) => b.date - a.date)
+          .slice(0, 5);
+        setRecentTransactions(recentMonthlyTransactions);
+
         const income = monthlyTransactions
           .filter(t => t.type === 'ingreso')
           .reduce((sum, t) => sum + t.amount, 0);

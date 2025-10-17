@@ -5,6 +5,13 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere al [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 16-10-2025
+
+### 🐛 Corregido
+- **Carga Infinita en URLs**: Corregido problema de carga infinita al acceder a `/transactions/new` sin estar autenticado
+- **Timeout de Autenticación**: Mejorado el manejo del timeout de autenticación para evitar borrar sesiones activas
+- **Validación de Usuario**: Mejorada la lógica de validación de usuario autenticado en páginas protegidas
+
 ## [0.2.0] - 16-10-2025
 
 ### ✨ Agregado
