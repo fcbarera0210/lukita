@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Settings, LogOut, Moon, Sun, Monitor, Calendar } from 'lucide-react';
+import { Settings, LogOut, Moon, Sun, Monitor, Calendar, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { getUserSettings } from '@/lib/auth';
+import { getUserSettings, changePassword } from '@/lib/auth';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { logout } from '@/lib/auth';
@@ -13,9 +13,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
+import { Modal } from '@/components/ui/Modal';
+import { useFabContext } from '@/components/ConditionalLayout';
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { setIsFormOpen } = useFabContext();
   const { theme, setTheme } = useTheme();
   const [userSettings, setUserSettings] = useState<UserSettingsType>({
     monthCutoffDay: 1,
@@ -23,6 +26,18 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -123,6 +138,51 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePasswordChange = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'Las contraseñas no coinciden',
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'La nueva contraseña debe tener al menos 6 caracteres',
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      showToast({
+        type: 'success',
+        title: 'Contraseña actualizada',
+        description: 'Tu contraseña ha sido cambiada exitosamente',
+      });
+      setIsPasswordModalOpen(false);
+      setIsFormOpen(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error: unknown) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo cambiar la contraseña',
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       
@@ -140,18 +200,31 @@ export default function SettingsPage() {
   return (
     
       <div className="p-4 space-y-6">
-        <div className="flex items-center gap-3">
-          <Settings className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Ajustes</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Settings className="h-8 w-8 text-muted-foreground" />
+            <h1 className="text-2xl font-bold">Ajustes</h1>
+          </div>
+          <Button 
+            onClick={handleLogout} 
+            size="icon" 
+            className="h-10 w-10 bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-200"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Configuración de Tema */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Moon className="h-5 w-5 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Moon className="h-6 w-6 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Tema</h2>
           </div>
-          <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Personaliza la apariencia de la aplicación. El tema oscuro es ideal para usar en ambientes con poca luz.
+          </p>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Button
                 variant={theme === 'dark' ? 'default' : 'outline'}
@@ -178,79 +251,212 @@ export default function SettingsPage() {
                 Sistema
               </Button>
             </div>
+            </div>
           </div>
         </div>
 
         {/* Configuración de Corte de Mes */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Calendar className="h-6 w-6 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Corte de Mes</h2>
           </div>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Selecciona el día del mes en que quieres que se corte tu período contable
-            </p>
-            <div className="flex items-center gap-3">
-              <label htmlFor="cutoffDay" className="text-sm font-medium">
-                Día de corte:
-              </label>
-              <Select
-                id="cutoffDay"
-                value={userSettings.monthCutoffDay}
-                onChange={(e) => handleCutoffDayChange(Number(e.target.value))}
-                className="w-20"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </Select>
+          <p className="text-sm text-muted-foreground">
+            Define el día del mes en que se reinicia tu período contable. Esto afecta cómo se calculan los resúmenes mensuales.
+          </p>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <label htmlFor="cutoffDay" className="text-sm font-medium">
+                  Día de corte:
+                </label>
+                <Select
+                  id="cutoffDay"
+                  value={userSettings.monthCutoffDay}
+                  onChange={(e) => handleCutoffDayChange(Number(e.target.value))}
+                  className="w-20"
+                >
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Información de la Cuenta */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Cuenta</h2>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">{user?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Usuario desde</p>
-              <p className="font-medium">
-                {user?.metadata.creationTime 
-                  ? new Date(user.metadata.creationTime).toLocaleDateString('es-CL')
-                  : 'N/A'
-                }
-              </p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Settings className="h-6 w-6 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Cuenta</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Información básica de tu cuenta de usuario y fecha de registro en la aplicación.
+          </p>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{user?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Usuario desde</p>
+                <p className="font-medium">
+                  {user?.metadata.creationTime 
+                    ? new Date(user.metadata.creationTime).toLocaleDateString('es-CL')
+                    : 'N/A'
+                  }
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Acciones</h2>
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2 text-destructive hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-              Cerrar Sesión
-            </Button>
+        {/* Seguridad */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Lock className="h-6 w-6 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Seguridad</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Gestiona la seguridad de tu cuenta. Para cambiar la contraseña, debes ingresar la contraseña actual y usar un mínimo de 6 caracteres.
+          </p>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsPasswordModalOpen(true);
+                  setIsFormOpen(true);
+                }}
+                className="w-full flex items-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                Cambiar contraseña
+              </Button>
+            </div>
           </div>
         </div>
+
 
         {/* Información de la App */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>Lukita v0.1.0</p>
+          <p>Lukita v0.2.0</p>
           <p>PWA de finanzas personales</p>
         </div>
+
+        {/* Modal de cambio de contraseña */}
+        <Modal
+          isOpen={isPasswordModalOpen}
+          onClose={() => {
+            setIsPasswordModalOpen(false);
+            setIsFormOpen(false);
+          }}
+          title="Cambiar contraseña"
+        >
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="currentPassword" className="block text-sm font-medium mb-2">
+                Contraseña actual
+              </label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showPasswords.current ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  {showPasswords.current ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
+                Nueva contraseña
+              </label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPasswords.new ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  {showPasswords.new ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                Confirmar nueva contraseña
+              </label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  {showPasswords.confirm ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setIsFormOpen(false);
+                }}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handlePasswordChange}
+                disabled={isChangingPassword}
+                className="flex-1"
+              >
+                {isChangingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     
   );

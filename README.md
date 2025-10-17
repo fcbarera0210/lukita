@@ -4,15 +4,25 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 
 ## 🚀 Características
 
+### ✨ Funcionalidades Principales
 - **PWA Instalable**: Funciona offline y se puede instalar en dispositivos móviles y desktop
 - **Tema Oscuro**: Interfaz oscura por defecto con soporte para tema claro y sistema
 - **Moneda CLP**: Manejo de pesos chilenos sin decimales
 - **Corte de Mes Configurable**: Período contable personalizable (por defecto día 1)
-- **Autenticación**: Sistema de login/registro con Firebase Auth
+- **Autenticación Segura**: Sistema de login/registro con Firebase Auth
 - **CRUD Completo**: Gestión de cuentas, categorías y transacciones
-- **Dashboard**: Resumen financiero con saldos y últimas transacciones
+- **Dashboard Inteligente**: Resumen financiero con saldos calculados y resumen mensual
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
+
+### 🆕 Novedades v0.2
+- **Categorías Universales**: Las categorías ya no están limitadas a ingreso/gasto, se especifica el tipo al crear la transacción
+- **Resumen Mensual**: Nueva card en el dashboard con navegación entre meses y desglose por categorías
+- **Menú FAB Mejorado**: Botón flotante con menú desplegable para crear transacciones, cuentas y categorías
+- **URLs Inteligentes**: Crear transacciones desde URLs con parámetros pre-llenados
+- **Recuperación de Contraseña**: Sistema completo de recuperación y cambio de contraseña
+- **Diseño Mejorado**: Interfaz más consistente con iconos y menús desplegables
+- **Navegación Optimizada**: Padding adicional para PWA instalada y mejor experiencia móvil
 
 ## 🛠️ Stack Tecnológico
 
@@ -110,7 +120,7 @@ users/{userId}/
 │   └── createdAt: number
 ├── categories/{categoryId}
 │   ├── name: string
-│   ├── kind: "ingreso" | "gasto"
+│   ├── kind?: "ingreso" | "gasto" (opcional desde v0.2)
 │   ├── icon?: string
 │   └── createdAt: number
 ├── transactions/{transactionId}
@@ -240,6 +250,42 @@ src/
 - Verificar que next-pwa esté configurado correctamente
 - Comprobar que el service worker esté funcionando
 - Revisar la consola del navegador para errores
+
+## 🔗 URLs Inteligentes (v0.2)
+
+Lukita soporta la creación de transacciones mediante URLs con parámetros pre-llenados, ideal para atajos de iPhone y integraciones.
+
+### Sintaxis
+```
+/transactions/new?type=<tipo>&amount=<monto>&note=<descripción>&category=<nombre_categoría>&account=<nombre_cuenta>
+```
+
+### Parámetros Disponibles
+- `type`: `ingreso` o `gasto`
+- `amount`: Monto numérico (ej: `5000`)
+- `note`: Descripción de la transacción
+- `category`: Nombre de la categoría (búsqueda por nombre)
+- `account`: Nombre de la cuenta (búsqueda por nombre)
+- `categoryId`: ID de la categoría (alternativo a `category`)
+- `accountId`: ID de la cuenta (alternativo a `account`)
+
+### Ejemplos
+```bash
+# Transacción básica
+/transactions/new?type=gasto&amount=5000&note=Almuerzo
+
+# Con categoría y cuenta por nombre
+/transactions/new?type=gasto&amount=5000&note=Almuerzo&category=Comida&account=Efectivo
+
+# Ingreso completo
+/transactions/new?type=ingreso&amount=500000&note=Salario&category=Trabajo&account=Cuenta Corriente
+```
+
+### Casos de Uso
+- **Atajos de iPhone**: Crear transacciones rápidas desde el centro de control
+- **Integraciones**: Sistemas externos pueden crear transacciones via URL
+- **Bookmarks**: Guardar URLs para transacciones frecuentes
+- **Compartir**: Enviar enlaces para crear transacciones específicas
 
 ## 📄 Licencia
 

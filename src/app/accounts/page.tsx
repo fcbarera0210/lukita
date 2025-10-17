@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Wallet, Edit, Trash2 } from 'lucide-react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Plus, Wallet, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, createAccount, updateAccount, deleteAccount } from '@/lib/firestore';
 import { Account } from '@/types/account';
@@ -10,13 +11,17 @@ import { Modal } from '@/components/ui/Modal';
 import { AccountForm } from '@/components/forms/AccountForm';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP } from '@/lib/clp';
+import { useFabContext } from '@/components/ConditionalLayout';
 
-export default function AccountsPage() {
+function AccountsPageContent() {
   const { user } = useAuth();
+  const { setIsFormOpen } = useFabContext();
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const loadAccounts = async () => {
@@ -39,6 +44,18 @@ export default function AccountsPage() {
   useEffect(() => {
     loadAccounts();
   }, [user]);
+
+  // Detectar parámetro new y abrir modal automáticamente
+  useEffect(() => {
+    const shouldOpenModal = searchParams.get('new') === 'true';
+    if (shouldOpenModal) {
+      setIsModalOpen(true);
+      // Limpiar la URL sin recargar la página
+      const url = new URL(window.location.href);
+      url.searchParams.delete('new');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   const handleCreateAccount = async (data: Omit<Account, 'id' | 'createdAt'>) => {
     if (!user) return;
@@ -91,16 +108,27 @@ export default function AccountsPage() {
   const openCreateModal = () => {
     setEditingAccount(null);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const openEditModal = (account: Account) => {
     setEditingAccount(account);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingAccount(null);
+    setIsFormOpen(false);
+  };
+
+  const toggleMenu = (accountId: string) => {
+    setOpenMenuId(openMenuId === accountId ? null : accountId);
+  };
+
+  const closeMenu = () => {
+    setOpenMenuId(null);
   };
 
   if (loading) {
@@ -118,10 +146,12 @@ export default function AccountsPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Cuentas</h1>
-        <Button onClick={openCreateModal} className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Wallet className="h-8 w-8 text-muted-foreground" />
+          <h1 className="text-2xl font-bold">Cuentas</h1>
+        </div>
+        <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
           <Plus className="h-4 w-4" />
-          Nueva cuenta
         </Button>
       </div>
 
@@ -138,42 +168,75 @@ export default function AccountsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="bg-card border border-border rounded-lg p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="font-medium">{account.name}</h3>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {account.type.replace('_', ' ')}
-                  </p>
-                  {account.initialBalance !== undefined && (
-                    <p className="text-lg font-semibold text-primary mt-1">
-                      {formatCLP(account.initialBalance)}
+          {accounts.map((account) => {
+            const isMenuOpen = openMenuId === account.id;
+            
+            return (
+              <div
+                key={account.id}
+                className="bg-card border border-border rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-medium">{account.name}</h3>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {account.type.replace('_', ' ')}
                     </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditModal(account)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteAccount(account.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    {account.initialBalance !== undefined && (
+                      <p className="text-lg font-semibold text-primary mt-1">
+                        {formatCLP(account.initialBalance)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Menu button */}
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleMenu(account.id)}
+                      className="h-8 w-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+
+                    {/* Dropdown menu */}
+                    {isMenuOpen && (
+                      <>
+                        {/* Overlay to close menu */}
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={closeMenu}
+                        />
+                        <div className="absolute right-0 top-8 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
+                          <button
+                            onClick={() => {
+                              openEditModal(account);
+                              closeMenu();
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDeleteAccount(account.id);
+                              closeMenu();
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Eliminar
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -189,5 +252,13 @@ export default function AccountsPage() {
         />
       </Modal>
     </div>
+  );
+}
+
+export default function AccountsPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <AccountsPageContent />
+    </Suspense>
   );
 }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { login } from '@/lib/auth';
+import { login, sendPasswordReset } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
@@ -20,6 +20,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [isSendingRecovery, setIsSendingRecovery] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -51,6 +54,81 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const handlePasswordRecovery = async () => {
+    if (!recoveryEmail) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'Por favor ingresa tu email',
+      });
+      return;
+    }
+
+    setIsSendingRecovery(true);
+    try {
+      await sendPasswordReset(recoveryEmail);
+      showToast({
+        type: 'success',
+        title: 'Email enviado',
+        description: 'Revisa tu correo para restablecer tu contraseña',
+      });
+      setIsRecoveryMode(false);
+      setRecoveryEmail('');
+    } catch (error: unknown) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo enviar el email de recuperación',
+      });
+    } finally {
+      setIsSendingRecovery(false);
+    }
+  };
+
+  if (isRecoveryMode) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Recuperar Contraseña</h1>
+          <p className="text-muted-foreground mt-2">
+            Ingresa tu email para recibir un enlace de recuperación
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="recoveryEmail" className="block text-sm font-medium mb-2">
+              Email
+            </label>
+            <Input
+              id="recoveryEmail"
+              type="email"
+              placeholder="tu@email.com"
+              value={recoveryEmail}
+              onChange={(e) => setRecoveryEmail(e.target.value)}
+            />
+          </div>
+
+          <Button
+            onClick={handlePasswordRecovery}
+            className="w-full"
+            disabled={isSendingRecovery}
+          >
+            {isSendingRecovery ? 'Enviando...' : 'Enviar enlace de recuperación'}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setIsRecoveryMode(false)}
+            className="w-full"
+          >
+            Volver al login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -90,6 +168,16 @@ export default function LoginPage() {
           {errors.password && (
             <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
           )}
+          
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setIsRecoveryMode(true)}
+              className="text-sm text-primary hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
         </div>
 
         <Button

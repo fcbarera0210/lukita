@@ -10,6 +10,7 @@ import { register } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { AlertTriangle } from 'lucide-react';
 
 const registerSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -79,6 +80,16 @@ export default function RegisterPage() {
           {errors.email && (
             <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
           )}
+          
+          {/* Advertencia sobre correos ficticios */}
+          <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Importante:</strong> Si usas un correo ficticio, no podrás recuperar tu contraseña en el futuro.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div>

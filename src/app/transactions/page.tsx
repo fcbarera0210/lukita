@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/lib/firestore';
 import { getAccounts } from '@/lib/firestore';
@@ -17,15 +17,19 @@ import { formatCLP } from '@/lib/clp';
 import { formatDate } from '@/lib/dates';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { getCategoryIcon } from '@/lib/categoryIcons';
+import { useFabContext } from '@/components/ConditionalLayout';
 
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const { setIsFormOpen } = useFabContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: '',
     accountId: '',
@@ -114,16 +118,27 @@ export default function TransactionsPage() {
   const openCreateModal = () => {
     setEditingTransaction(null);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const openEditModal = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingTransaction(null);
+    setIsFormOpen(false);
+  };
+
+  const toggleMenu = (transactionId: string) => {
+    setOpenMenuId(openMenuId === transactionId ? null : transactionId);
+  };
+
+  const closeMenu = () => {
+    setOpenMenuId(null);
   };
 
   // Filtrar transacciones
@@ -164,10 +179,12 @@ export default function TransactionsPage() {
     
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Transacciones</h1>
-          <Button onClick={openCreateModal} className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <CreditCard className="h-8 w-8 text-muted-foreground" />
+            <h1 className="text-2xl font-bold">Transacciones</h1>
+          </div>
+          <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
             <Plus className="h-4 w-4" />
-            Nueva transacción
           </Button>
         </div>
 
@@ -248,64 +265,103 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredTransactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="bg-card border border-border rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className={`p-2 rounded-full ${
-                      transaction.type === 'ingreso' 
-                        ? 'bg-green-500/20 text-green-500' 
-                        : 'bg-red-500/20 text-red-500'
-                    }`}>
-                      {transaction.type === 'ingreso' ? (
-                        <TrendingUp className="h-4 w-4" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4" />
-                      )}
+            {filteredTransactions.map((transaction) => {
+              const category = categories.find(c => c.id === transaction.categoryId);
+              const account = accounts.find(a => a.id === transaction.accountId);
+              const CategoryIcon = getCategoryIcon(category?.icon);
+              const isMenuOpen = openMenuId === transaction.id;
+              
+              return (
+                <div
+                  key={transaction.id}
+                  className="bg-card border border-border rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    {/* Left side - Category icon */}
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="p-2 rounded-full bg-muted/50">
+                        <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      
+                      {/* Transaction details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground">
+                          {transaction.note || category?.name || 'Sin descripción'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {account?.name || 'Cuenta desconocida'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(new Date(transaction.date))}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate">
-                        {transaction.note || getCategoryName(transaction.categoryId)}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{getAccountName(transaction.accountId)}</span>
-                        <span>•</span>
-                        <span>{formatDate(new Date(transaction.date))}</span>
+
+                    {/* Right side - Amount and menu */}
+                    <div className="flex items-center gap-2">
+                      {/* Amount with trend icon */}
+                      <div className="flex items-center gap-1">
+                        {transaction.type === 'ingreso' ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`font-semibold ${
+                          transaction.type === 'ingreso' ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {formatCLP(transaction.amount)}
+                        </span>
+                      </div>
+
+                      {/* Menu button */}
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleMenu(transaction.id)}
+                          className="h-8 w-8"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+
+                        {/* Dropdown menu */}
+                        {isMenuOpen && (
+                          <>
+                            {/* Overlay to close menu */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={closeMenu}
+                            />
+                            <div className="absolute right-0 top-8 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
+                              <button
+                                onClick={() => {
+                                  openEditModal(transaction);
+                                  closeMenu();
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                              >
+                                <Edit className="h-4 w-4" />
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDeleteTransaction(transaction.id);
+                                  closeMenu();
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Eliminar
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className={`font-semibold ${
-                        transaction.type === 'ingreso' ? 'text-green-500' : 'text-red-500'
-                      }`}>
-                        {transaction.type === 'ingreso' ? '+' : '-'}
-                        {formatCLP(transaction.amount)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditModal(transaction)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteTransaction(transaction.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

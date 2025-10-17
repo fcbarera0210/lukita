@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Tag, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Plus, Tag, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/lib/firestore';
 import { Category } from '@/types/category';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { CategoryForm } from '@/components/forms/CategoryForm';
 import { useToast } from '@/components/ui/Toast';
+import { useFabContext } from '@/components/ConditionalLayout';
 import { 
   Utensils, 
   Car, 
@@ -39,12 +41,15 @@ const iconMap = {
   briefcase: Briefcase,
 };
 
-export default function CategoriesPage() {
+function CategoriesPageContent() {
   const { user } = useAuth();
+  const { setIsFormOpen } = useFabContext();
+  const searchParams = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const loadCategories = async () => {
@@ -68,12 +73,26 @@ export default function CategoriesPage() {
     loadCategories();
   }, [user]);
 
+  // Detectar parámetro new y abrir modal automáticamente
+  useEffect(() => {
+    const shouldOpenModal = searchParams.get('new') === 'true';
+    if (shouldOpenModal) {
+      setIsModalOpen(true);
+      setIsFormOpen(true);
+      // Limpiar la URL sin recargar la página
+      const url = new URL(window.location.href);
+      url.searchParams.delete('new');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams, setIsFormOpen]);
+
   const handleCreateCategory = async (data: Omit<Category, 'id' | 'createdAt'>) => {
     if (!user) return;
     
     try {
       await createCategory(user.uid, data);
       setIsModalOpen(false);
+      setIsFormOpen(false);
       await loadCategories();
     } catch (error) {
       throw error; // Re-throw para que el formulario maneje el error
@@ -85,6 +104,8 @@ export default function CategoriesPage() {
     
     try {
       await updateCategory(user.uid, editingCategory.id, data);
+      setIsModalOpen(false);
+      setIsFormOpen(false);
       setEditingCategory(null);
       await loadCategories();
     } catch (error) {
@@ -119,20 +140,29 @@ export default function CategoriesPage() {
   const openCreateModal = () => {
     setEditingCategory(null);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const openEditModal = (category: Category) => {
     setEditingCategory(category);
     setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
+    setIsFormOpen(false);
   };
 
-  const incomeCategories = categories.filter(cat => cat.kind === 'ingreso');
-  const expenseCategories = categories.filter(cat => cat.kind === 'gasto');
+  const toggleMenu = (categoryId: string) => {
+    setOpenMenuId(openMenuId === categoryId ? null : categoryId);
+  };
+
+  const closeMenu = () => {
+    setOpenMenuId(null);
+  };
+
 
   if (loading) {
     return (
@@ -152,10 +182,12 @@ export default function CategoriesPage() {
     
       <div className="p-4 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Categorías</h1>
-          <Button onClick={openCreateModal} className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Tag className="h-8 w-8 text-muted-foreground" />
+            <h1 className="text-2xl font-bold">Categorías</h1>
+          </div>
+          <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
             <Plus className="h-4 w-4" />
-            Nueva categoría
           </Button>
         </div>
 
@@ -171,102 +203,74 @@ export default function CategoriesPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Categorías de Ingreso */}
-            {incomeCategories.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
-                  <h2 className="text-lg font-semibold">Ingresos</h2>
-                </div>
-                <div className="space-y-3">
-                  {incomeCategories.map((category) => {
-                    const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Tag;
-                    return (
-                      <div
-                        key={category.id}
-                        className="bg-card border border-border rounded-lg p-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-green-500/20 text-green-500">
-                              <IconComponent className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{category.name}</h3>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditModal(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteCategory(category.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
+          <div className="space-y-3">
+            {categories.map((category) => {
+              const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Tag;
+              const isMenuOpen = openMenuId === category.id;
+              
+              return (
+                <div
+                  key={category.id}
+                  className="bg-card border border-border rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-muted/50">
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                      <div>
+                        <h3 className="font-medium">{category.name}</h3>
+                      </div>
+                    </div>
 
-            {/* Categorías de Gasto */}
-            {expenseCategories.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingDown className="h-5 w-5 text-red-500" />
-                  <h2 className="text-lg font-semibold">Gastos</h2>
-                </div>
-                <div className="space-y-3">
-                  {expenseCategories.map((category) => {
-                    const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Tag;
-                    return (
-                      <div
-                        key={category.id}
-                        className="bg-card border border-border rounded-lg p-4"
+                    {/* Menu button */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleMenu(category.id)}
+                        className="h-8 w-8"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-red-500/20 text-red-500">
-                              <IconComponent className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{category.name}</h3>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditModal(category)}
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+
+                      {/* Dropdown menu */}
+                      {isMenuOpen && (
+                        <>
+                          {/* Overlay to close menu */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={closeMenu}
+                          />
+                          <div className="absolute right-0 top-8 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
+                            <button
+                              onClick={() => {
+                                openEditModal(category);
+                                closeMenu();
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteCategory(category.id)}
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDeleteCategory(category.id);
+                                closeMenu();
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                              Eliminar
+                            </button>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         )}
 
@@ -282,6 +286,13 @@ export default function CategoriesPage() {
           />
         </Modal>
       </div>
-    
+    );
+}
+
+export default function CategoriesPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <CategoriesPageContent />
+    </Suspense>
   );
 }

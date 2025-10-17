@@ -4,25 +4,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { categorySchema, CategoryFormData } from '@/schemas/category.schema';
-import { Category, CategoryKind } from '@/types/category';
+import { Category } from '@/types/category';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
-import { 
-  Utensils, 
-  Car, 
-  Home, 
-  ShoppingBag, 
-  Heart, 
-  GraduationCap,
-  Gamepad2,
-  Coffee,
-  Plane,
-  Gift,
-  DollarSign,
-  Briefcase
-} from 'lucide-react';
+import { categoryIcons, getCategoryIcon } from '@/lib/categoryIcons';
 
 interface CategoryFormProps {
   category?: Category;
@@ -30,25 +16,6 @@ interface CategoryFormProps {
   onCancel: () => void;
 }
 
-const categoryIcons = [
-  { value: 'utensils', label: 'Comida', icon: Utensils },
-  { value: 'car', label: 'Transporte', icon: Car },
-  { value: 'home', label: 'Casa', icon: Home },
-  { value: 'shopping-bag', label: 'Compras', icon: ShoppingBag },
-  { value: 'heart', label: 'Salud', icon: Heart },
-  { value: 'graduation-cap', label: 'Educación', icon: GraduationCap },
-  { value: 'gamepad-2', label: 'Entretenimiento', icon: Gamepad2 },
-  { value: 'coffee', label: 'Café', icon: Coffee },
-  { value: 'plane', label: 'Viajes', icon: Plane },
-  { value: 'gift', label: 'Regalos', icon: Gift },
-  { value: 'dollar-sign', label: 'Dinero', icon: DollarSign },
-  { value: 'briefcase', label: 'Trabajo', icon: Briefcase },
-];
-
-const categoryKinds: { value: CategoryKind; label: string }[] = [
-  { value: 'ingreso', label: 'Ingreso' },
-  { value: 'gasto', label: 'Gasto' },
-];
 
 export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -64,13 +31,11 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: category?.name || '',
-      kind: category?.kind || 'gasto',
       icon: category?.icon || 'utensils',
     },
   });
 
   const selectedIcon = watch('icon');
-  const selectedKind = watch('kind');
 
   const onFormSubmit = async (data: CategoryFormData) => {
     setIsLoading(true);
@@ -92,7 +57,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
     }
   };
 
-  const SelectedIcon = categoryIcons.find(icon => icon.value === selectedIcon)?.icon || Utensils;
+  const SelectedIcon = getCategoryIcon(selectedIcon);
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
@@ -110,24 +75,6 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
         )}
       </div>
 
-      <div>
-        <label htmlFor="kind" className="block text-sm font-medium mb-2">
-          Tipo
-        </label>
-        <Select
-          id="kind"
-          {...register('kind')}
-        >
-          {categoryKinds.map((kind) => (
-            <option key={kind.value} value={kind.value}>
-              {kind.label}
-            </option>
-          ))}
-        </Select>
-        {errors.kind && (
-          <p className="text-sm text-destructive mt-1">{errors.kind.message}</p>
-        )}
-      </div>
 
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -164,11 +111,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
       {/* Preview */}
       <div className="bg-muted/50 rounded-lg p-3">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-full ${
-            selectedKind === 'ingreso' 
-              ? 'bg-green-500/20 text-green-500' 
-              : 'bg-red-500/20 text-red-500'
-          }`}>
+          <div className="p-2 rounded-full bg-primary/20 text-primary">
             <SelectedIcon className="h-4 w-4" />
           </div>
           <div>

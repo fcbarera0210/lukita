@@ -40,7 +40,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
     defaultValues: {
       name: account?.name || '',
       type: account?.type || 'efectivo',
-      initialBalance: account?.initialBalance || undefined,
+      initialBalance: account?.initialBalance || 0,
     },
   });
 
@@ -48,7 +48,8 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
   const handleInitialBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseCLP(e.target.value);
-    setValue('initialBalance', value);
+    // Si el valor es NaN o el campo está vacío, establecer como 0
+    setValue('initialBalance', isNaN(value) ? 0 : value);
   };
 
   const onFormSubmit = async (data: AccountFormData) => {

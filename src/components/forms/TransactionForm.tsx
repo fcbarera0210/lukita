@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { transactionSchema, TransactionFormData } from '@/schemas/transaction.schema';
@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP, parseCLP } from '@/lib/clp';
-import { formatDate } from '@/lib/dates';
 
 interface TransactionFormProps {
   transaction?: Transaction;
@@ -20,6 +19,7 @@ interface TransactionFormProps {
   categories: Category[];
   onSubmit: (data: Omit<Transaction, 'id' | 'createdAt'>) => Promise<void>;
   onCancel: () => void;
+  defaultValues?: Partial<TransactionFormData>;
 }
 
 export function TransactionForm({ 
@@ -27,7 +27,8 @@ export function TransactionForm({
   accounts, 
   categories, 
   onSubmit, 
-  onCancel 
+  onCancel,
+  defaultValues
 }: TransactionFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
@@ -41,12 +42,12 @@ export function TransactionForm({
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: transaction?.type || 'gasto',
-      amount: transaction?.amount || 0,
-      date: transaction?.date || Date.now(),
-      accountId: transaction?.accountId || '',
-      categoryId: transaction?.categoryId || '',
-      note: transaction?.note || '',
+      type: transaction?.type || defaultValues?.type || 'gasto',
+      amount: transaction?.amount || defaultValues?.amount || 0,
+      date: transaction?.date || defaultValues?.date || Date.now(),
+      accountId: transaction?.accountId || defaultValues?.accountId || '',
+      categoryId: transaction?.categoryId || defaultValues?.categoryId || '',
+      note: transaction?.note || defaultValues?.note || '',
     },
   });
 
@@ -54,8 +55,8 @@ export function TransactionForm({
   const amount = watch('amount');
   const date = watch('date');
 
-  // Filtrar categorías por tipo
-  const filteredCategories = categories.filter(cat => cat.kind === type);
+  // Mostrar todas las categorías disponibles (universales)
+  const filteredCategories = categories;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseCLP(e.target.value);
@@ -176,7 +177,7 @@ export function TransactionForm({
         )}
         {filteredCategories.length === 0 && (
           <p className="text-sm text-muted-foreground mt-1">
-            No hay categorías de {type} disponibles. Crea una categoría primero.
+            No hay categorías disponibles. Crea una categoría primero.
           </p>
         )}
       </div>
@@ -206,7 +207,7 @@ export function TransactionForm({
         </Button>
         <Button
           type="submit"
-          disabled={isLoading || filteredCategories.length === 0}
+          disabled={isLoading}
           className="flex-1"
         >
           {isLoading ? 'Guardando...' : transaction ? 'Actualizar' : 'Crear'}

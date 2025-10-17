@@ -4,6 +4,6 @@ export interface Account {
   id: string;
   name: string;
   type: AccountType;
-  initialBalance?: number;
+  initialBalance: number;
   createdAt: number;
 }

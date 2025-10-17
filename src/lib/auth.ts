@@ -5,6 +5,10 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   User 
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -88,4 +92,22 @@ export const getUserSettings = async (uid: string): Promise<UserSettings> => {
     };
   }
   return { monthCutoffDay: 1, theme: 'dark' };
+};
+
+export const sendPasswordReset = async (email: string) => {
+  await sendPasswordResetEmail(auth, email);
+};
+
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  const user = auth.currentUser;
+  if (!user || !user.email) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  // Reautenticar usuario
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+
+  // Cambiar contraseña
+  await updatePassword(user, newPassword);
 };
