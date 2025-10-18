@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { accountSchema, AccountFormData } from '@/schemas/account.schema';
+import { accountSchema, createAccountSchema, AccountFormData } from '@/schemas/account.schema';
 import { Account, AccountType } from '@/types/account';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP, parseCLP } from '@/lib/clp';
+import { ACCOUNT_COLORS, MAX_ACCOUNTS, getNextAvailableColor } from '@/lib/account-colors';
 
 interface AccountFormProps {
   account?: Account;
+  existingAccounts?: Account[];
   onSubmit: (data: Omit<Account, 'id' | 'createdAt'>) => Promise<void>;
   onCancel: () => void;
 }
@@ -25,9 +27,24 @@ const accountTypes: { value: AccountType; label: string }[] = [
   { value: 'otro', label: 'Otro' },
 ];
 
-export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
+export function AccountForm({ account, existingAccounts = [], onSubmit, onCancel }: AccountFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
+
+  // Verificar si se puede crear una nueva cuenta
+  const canCreateAccount = existingAccounts.length < MAX_ACCOUNTS;
+  const isAtLimit = existingAccounts.length >= MAX_ACCOUNTS;
+
+  // Obtener colores usados por otras cuentas
+  const usedColors = existingAccounts
+    .filter(acc => acc.id !== account?.id) // Excluir la cuenta actual si estamos editando
+    .map(acc => acc.color);
+
+  // Color por defecto para nuevas cuentas
+  const defaultColor = account?.color || getNextAvailableColor(usedColors);
+
+  // Crear esquema dinámico con validación de nombres únicos
+  const dynamicSchema = createAccountSchema(existingAccounts, account?.id);
 
   const {
     register,
@@ -36,15 +53,24 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
     watch,
     formState: { errors },
   } = useForm<AccountFormData>({
-    resolver: zodResolver(accountSchema),
+    resolver: zodResolver(dynamicSchema),
     defaultValues: {
       name: account?.name || '',
       type: account?.type || 'efectivo',
       initialBalance: account?.initialBalance || 0,
+      color: defaultColor,
     },
   });
 
   const initialBalance = watch('initialBalance');
+  const selectedColor = watch('color');
+
+  // Asignar color automáticamente cuando se carga el formulario
+  useEffect(() => {
+    if (!account && !selectedColor) {
+      setValue('color', defaultColor);
+    }
+  }, [account, selectedColor, defaultColor, setValue]);
 
   const handleInitialBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseCLP(e.target.value);
@@ -53,6 +79,16 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
   };
 
   const onFormSubmit = async (data: AccountFormData) => {
+    // Validar límite de cuentas para nuevas cuentas
+    if (!account && isAtLimit) {
+      showToast({
+        type: 'error',
+        title: 'Límite alcanzado',
+        description: `Solo se permiten un máximo de ${MAX_ACCOUNTS} cuentas`,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await onSubmit(data);
@@ -74,6 +110,24 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+      {/* Mensaje de límite de cuentas */}
+      {!account && (
+        <div className={`border rounded-lg p-3 ${
+          existingAccounts.length >= 6 
+            ? 'bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800' 
+            : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800'
+        }`}>
+          <p className={`text-sm ${
+            existingAccounts.length >= 6 
+              ? 'text-yellow-800 dark:text-yellow-200' 
+              : 'text-blue-800 dark:text-blue-200'
+          }`}>
+            <strong>Límite de cuentas:</strong> Puedes crear hasta {MAX_ACCOUNTS} cuentas. 
+            Actualmente tienes {existingAccounts.length} de {MAX_ACCOUNTS} cuentas.
+          </p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="name" className="block text-sm font-medium mb-2">
           Nombre de la cuenta
@@ -123,6 +177,62 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
         )}
       </div>
 
+      <div>
+        <label htmlFor="color" className="block text-sm font-medium mb-2">
+          Color de la cuenta
+        </label>
+        <div className="grid grid-cols-4 gap-2">
+          {ACCOUNT_COLORS.map((color) => {
+            const isUsed = usedColors.includes(color.id);
+            const isSelected = selectedColor === color.id;
+            
+            return (
+              <button
+                key={color.id}
+                type="button"
+                disabled={isUsed}
+                onClick={() => setValue('color', color.id)}
+                className={`
+                  relative w-full h-12 rounded-lg border-2 transition-all duration-200
+                  ${isSelected 
+                    ? 'border-gray-900 dark:border-gray-100 ring-2 ring-gray-400 dark:ring-gray-600' 
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  }
+                  ${isUsed 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'cursor-pointer hover:scale-105'
+                  }
+                `}
+                style={{ backgroundColor: color.value }}
+                title={isUsed ? `${color.name} (en uso)` : color.name}
+              >
+                {isSelected && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-900 dark:text-gray-100" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                {isUsed && !isSelected && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {errors.color && (
+          <p className="text-sm text-destructive mt-1">{errors.color.message}</p>
+        )}
+      </div>
+
       <div className="flex gap-3 pt-4">
         <Button
           type="button"
@@ -134,7 +244,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
         </Button>
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || (!account && isAtLimit)}
           className="flex-1"
         >
           {isLoading ? 'Guardando...' : account ? 'Actualizar' : 'Crear'}

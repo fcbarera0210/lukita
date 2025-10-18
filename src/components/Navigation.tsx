@@ -9,19 +9,24 @@ import {
   Wallet, 
   Tag, 
   Settings,
-  Plus
+  Plus,
+  ArrowRightLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
-import { getAccounts, getCategories, createTransaction, createAccount, createCategory } from '@/lib/firestore';
+import { getAccounts, getCategories, createTransaction, createAccount, createCategory, createTransfer } from '@/lib/firestore';
 import { Account } from '@/types/account';
 import { Category } from '@/types/category';
 import { Transaction } from '@/types/transaction';
+import { TransferFormData } from '@/schemas/transfer.schema';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { AccountForm } from '@/components/forms/AccountForm';
 import { CategoryForm } from '@/components/forms/CategoryForm';
+import { TransferForm } from '@/components/forms/TransferForm';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { MAX_ACCOUNTS } from '@/lib/account-colors';
+import { dispatchCustomEvent, CUSTOM_EVENTS, addCustomEventListener } from '@/lib/custom-events';
 
 const navigationItems = [
   {
@@ -88,7 +93,7 @@ export function FloatingActionButton() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'transaction' | 'category' | 'account' | null>(null);
+  const [activeModal, setActiveModal] = useState<'transaction' | 'category' | 'account' | 'transfer' | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -103,7 +108,28 @@ export function FloatingActionButton() {
   };
 
   const handleNewAccount = () => {
+    if (accounts.length >= MAX_ACCOUNTS) {
+      showToast({
+        type: 'error',
+        title: 'Límite alcanzado',
+        description: `Solo se permiten un máximo de ${MAX_ACCOUNTS} cuentas`,
+      });
+      return;
+    }
     setActiveModal('account');
+    setIsOpen(false);
+  };
+
+  const handleNewTransfer = () => {
+    if (accounts.length < 2) {
+      showToast({
+        type: 'error',
+        title: 'Cuentas insuficientes',
+        description: 'Necesitas al menos 2 cuentas para realizar transferencias',
+      });
+      return;
+    }
+    setActiveModal('transfer');
     setIsOpen(false);
   };
 
@@ -111,7 +137,7 @@ export function FloatingActionButton() {
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
-      
+
       try {
         const [accountsData, categoriesData] = await Promise.all([
           getAccounts(user.uid),
@@ -127,6 +153,22 @@ export function FloatingActionButton() {
     loadData();
   }, [user]);
 
+  // Escuchar eventos de actualización de cuentas para mantener el estado sincronizado
+  useEffect(() => {
+    const removeListener = addCustomEventListener(CUSTOM_EVENTS.REFRESH_ACCOUNTS, async () => {
+      if (user) {
+        try {
+          const accountsData = await getAccounts(user.uid);
+          setAccounts(accountsData);
+        } catch (error) {
+          console.error('Error updating accounts in FAB:', error);
+        }
+      }
+    });
+
+    return removeListener;
+  }, [user]);
+
   // Handlers para crear elementos
   const handleCreateTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     if (!user) return;
@@ -139,8 +181,9 @@ export function FloatingActionButton() {
         description: 'La transacción ha sido creada exitosamente',
       });
       setActiveModal(null);
-      // Disparar evento personalizado para actualizar dashboard
-      window.dispatchEvent(new CustomEvent('refreshDashboard'));
+      // Disparar eventos para actualizar otras páginas
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_TRANSACTIONS);
     } catch (error) {
       throw error;
     }
@@ -156,12 +199,14 @@ export function FloatingActionButton() {
         title: 'Cuenta creada',
         description: 'La cuenta ha sido creada exitosamente',
       });
-      setActiveModal(null);
       // Recargar cuentas
       const accountsData = await getAccounts(user.uid);
       setAccounts(accountsData);
-      // Disparar evento personalizado para actualizar dashboard
-      window.dispatchEvent(new CustomEvent('refreshDashboard'));
+      // Cerrar modal después de completar la operación
+      setActiveModal(null);
+      // Disparar eventos para actualizar otras páginas
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
     } catch (error) {
       throw error;
     }
@@ -181,8 +226,29 @@ export function FloatingActionButton() {
       // Recargar categorías
       const categoriesData = await getCategories(user.uid);
       setCategories(categoriesData);
-      // Disparar evento personalizado para actualizar dashboard
-      window.dispatchEvent(new CustomEvent('refreshDashboard'));
+      // Disparar eventos para actualizar otras páginas
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_CATEGORIES);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleCreateTransfer = async (data: TransferFormData) => {
+    if (!user) return;
+    
+    try {
+      await createTransfer(user.uid, data);
+      showToast({
+        type: 'success',
+        title: 'Transferencia realizada',
+        description: 'La transferencia se ha realizado exitosamente',
+      });
+      setActiveModal(null);
+      // Disparar eventos para actualizar otras páginas
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_TRANSACTIONS);
     } catch (error) {
       throw error;
     }
@@ -195,6 +261,12 @@ export function FloatingActionButton() {
       action: handleNewTransaction,
     },
     {
+      label: 'Transferir entre cuentas',
+      icon: ArrowRightLeft,
+      action: handleNewTransfer,
+      disabled: accounts.length < 2,
+    },
+    {
       label: 'Nueva categoría',
       icon: Tag,
       action: handleNewCategory,
@@ -203,6 +275,7 @@ export function FloatingActionButton() {
       label: 'Nueva cuenta',
       icon: Wallet,
       action: handleNewAccount,
+      disabled: accounts.length >= MAX_ACCOUNTS,
     },
   ];
 
@@ -213,12 +286,19 @@ export function FloatingActionButton() {
         <div className="absolute bottom-16 right-0 mb-2 space-y-2 z-50">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
+            const isDisabled = item.disabled || false;
             return (
               <button
                 key={item.label}
-                onClick={() => item.action()}
-                className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 shadow-lg hover:bg-muted transition-colors min-w-[180px] w-full text-left"
+                onClick={() => !isDisabled && item.action()}
+                disabled={isDisabled}
+                className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 shadow-lg transition-colors min-w-[180px] w-full text-left ${
+                  isDisabled 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-muted cursor-pointer'
+                }`}
                 style={{ animationDelay: `${index * 50}ms` }}
+                title={isDisabled ? `Máximo ${MAX_ACCOUNTS} cuentas permitidas` : undefined}
               >
                 <Icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{item.label}</span>
@@ -267,6 +347,7 @@ export function FloatingActionButton() {
           title="Nueva Cuenta"
         >
           <AccountForm
+            existingAccounts={accounts}
             onSubmit={handleCreateAccount}
             onCancel={() => setActiveModal(null)}
           />
@@ -281,6 +362,20 @@ export function FloatingActionButton() {
         >
           <CategoryForm
             onSubmit={handleCreateCategory}
+            onCancel={() => setActiveModal(null)}
+          />
+        </Modal>
+      )}
+
+      {activeModal === 'transfer' && (
+        <Modal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          title="Transferir entre Cuentas"
+        >
+          <TransferForm
+            accounts={accounts}
+            onSubmit={handleCreateTransfer}
             onCancel={() => setActiveModal(null)}
           />
         </Modal>

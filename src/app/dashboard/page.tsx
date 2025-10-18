@@ -12,6 +12,8 @@ import { formatCLP } from '@/lib/clp';
 import { formatDate, getPeriodFromCutoff } from '@/lib/dates';
 import { Button } from '@/components/ui/Button';
 import { getCategoryIcon } from '@/lib/categoryIcons';
+import { getAccountColorClass } from '@/lib/account-colors';
+import { HorizontalBarChart } from '@/components/charts';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -237,7 +239,7 @@ export default function DashboardPage() {
               {accounts.map((account) => (
                 <div
                   key={account.id}
-                  className="flex items-center justify-between p-2 bg-muted/50 rounded"
+                  className={`flex items-center justify-between p-2 bg-muted/50 rounded border-2 ${getAccountColorClass(account.color)}`}
                 >
                   <div>
                     <span className="text-sm font-medium">{account.name}</span>
@@ -262,25 +264,24 @@ export default function DashboardPage() {
             <Calendar className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Resumen Mensual</h2>
           </div>
-          {monthlyData.categoryBreakdown.length > 0 && (
-            <Button
-              variant="ghost"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  Ocultar categorías
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  Ver categorías
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2"
+            disabled={monthlyData.categoryBreakdown.length === 0}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Ocultar categorías
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Ver categorías
+              </>
+            )}
+          </Button>
         </div>
         
         <div className="bg-card border border-border rounded-lg p-6">
@@ -350,23 +351,13 @@ export default function DashboardPage() {
               <h4 className="text-sm font-medium text-muted-foreground">
                 Gastos por categoría
               </h4>
-              {monthlyData.categoryBreakdown.map((item) => {
-                const Icon = getCategoryIcon(item.category.icon);
-                return (
-                  <div
-                    key={item.categoryId}
-                    className="flex items-center justify-between p-2 bg-muted/50 rounded"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{item.category.name}</span>
-                    </div>
-                    <span className="text-sm font-medium text-red-500">
-                      {formatCLP(item.amount)}
-                    </span>
-                  </div>
-                );
-              })}
+              <HorizontalBarChart 
+                data={monthlyData.categoryBreakdown.map(item => ({
+                  ...item,
+                  percentage: monthlyData.expenses > 0 ? (item.amount / monthlyData.expenses) * 100 : 0
+                }))}
+                maxAmount={monthlyData.expenses}
+              />
             </div>
           )}
         </div>
@@ -402,11 +393,15 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {recentTransactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="bg-card border border-border rounded-lg p-4"
-              >
+            {recentTransactions.map((transaction) => {
+              const account = accounts.find(acc => acc.id === transaction.accountId);
+              const accountColorClass = account ? getAccountColorClass(account.color) : 'border-border';
+              
+              return (
+                <div
+                  key={transaction.id}
+                  className={`bg-card border-2 ${accountColorClass} rounded-lg p-4`}
+                >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-muted/50">
@@ -448,7 +443,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

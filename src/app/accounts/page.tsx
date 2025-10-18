@@ -1,35 +1,43 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Wallet, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { getAccounts, createAccount, updateAccount, deleteAccount } from '@/lib/firestore';
+import { getAccounts, createAccount, updateAccount, deleteAccount, getTransactions } from '@/lib/firestore';
 import { Account } from '@/types/account';
+import { Transaction } from '@/types/transaction';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { AccountForm } from '@/components/forms/AccountForm';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP } from '@/lib/clp';
 import { useFabContext } from '@/components/ConditionalLayout';
+import { MAX_ACCOUNTS, getAccountColorClass } from '@/lib/account-colors';
+import { addCustomEventListener, CUSTOM_EVENTS, dispatchCustomEvent } from '@/lib/custom-events';
 
 function AccountsPageContent() {
   const { user } = useAuth();
   const { setIsFormOpen } = useFabContext();
   const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { showToast } = useToast();
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     if (!user) return;
-    
+
     try {
-      const accountsData = await getAccounts(user.uid);
+      const [accountsData, transactionsData] = await Promise.all([
+        getAccounts(user.uid),
+        getTransactions(user.uid), // Cargar todas las transacciones para calcular balances
+      ]);
       setAccounts(accountsData);
+      setTransactions(transactionsData);
     } catch (error) {
       showToast({
         type: 'error',
@@ -39,11 +47,24 @@ function AccountsPageContent() {
     } finally {
       setLoading(false);
     }
+  }, [user, showToast]);
+
+  // Función para calcular el balance real de una cuenta
+  const calculateAccountBalance = (accountId: string, initialBalance: number) => {
+    const accountTransactions = transactions.filter(t => t.accountId === accountId);
+    const balance = accountTransactions.reduce((sum, transaction) => {
+      if (transaction.type === 'ingreso') {
+        return sum + transaction.amount;
+      } else {
+        return sum - transaction.amount;
+      }
+    }, initialBalance);
+    return balance;
   };
 
   useEffect(() => {
     loadAccounts();
-  }, [user]);
+  }, [loadAccounts]);
 
   // Detectar parámetro new y abrir modal automáticamente
   useEffect(() => {
@@ -57,13 +78,34 @@ function AccountsPageContent() {
     }
   }, [searchParams]);
 
+  // Escuchar eventos de actualización de cuentas desde otros componentes
+  useEffect(() => {
+    const removeListener = addCustomEventListener(CUSTOM_EVENTS.REFRESH_ACCOUNTS, () => {
+      loadAccounts();
+    });
+
+    return removeListener;
+  }, [loadAccounts]);
+
+  // Escuchar eventos de actualización de transacciones para actualizar balances
+  useEffect(() => {
+    const removeListener = addCustomEventListener(CUSTOM_EVENTS.REFRESH_TRANSACTIONS, () => {
+      loadAccounts(); // Recargar cuentas para actualizar balances
+    });
+
+    return removeListener;
+  }, [loadAccounts]);
+
   const handleCreateAccount = async (data: Omit<Account, 'id' | 'createdAt'>) => {
     if (!user) return;
     
     try {
       await createAccount(user.uid, data);
+      await loadAccounts(); // Cargar cuentas antes de cerrar el modal
       setIsModalOpen(false);
-      await loadAccounts();
+      setIsFormOpen(false); // Restaurar el FAB
+      // Disparar evento para actualizar dashboard sin afectar el FAB
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
     } catch (error) {
       throw error; // Re-throw para que el formulario maneje el error
     }
@@ -74,8 +116,12 @@ function AccountsPageContent() {
     
     try {
       await updateAccount(user.uid, editingAccount.id, data);
+      await loadAccounts(); // Cargar cuentas antes de cerrar el modal
       setEditingAccount(null);
-      await loadAccounts();
+      setIsModalOpen(false);
+      setIsFormOpen(false); // Restaurar el FAB
+      // Disparar evento para actualizar dashboard
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
     } catch (error) {
       throw error; // Re-throw para que el formulario maneje el error
     }
@@ -96,6 +142,9 @@ function AccountsPageContent() {
         description: 'La cuenta ha sido eliminada exitosamente',
       });
       await loadAccounts();
+      // Disparar evento para actualizar otros componentes
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
+      dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
     } catch (error) {
       showToast({
         type: 'error',
@@ -150,7 +199,13 @@ function AccountsPageContent() {
           <Wallet className="h-8 w-8 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Cuentas</h1>
         </div>
-        <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
+        <Button 
+          onClick={openCreateModal} 
+          size="icon" 
+          className="h-10 w-10"
+          disabled={accounts.length >= MAX_ACCOUNTS}
+          title={accounts.length >= MAX_ACCOUNTS ? `Máximo ${MAX_ACCOUNTS} cuentas permitidas` : 'Crear nueva cuenta'}
+        >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
@@ -162,7 +217,10 @@ function AccountsPageContent() {
           <p className="text-muted-foreground mb-4">
             Crea tu primera cuenta para comenzar a gestionar tus finanzas
           </p>
-          <Button onClick={openCreateModal}>
+          <Button 
+            onClick={openCreateModal}
+            disabled={accounts.length >= MAX_ACCOUNTS}
+          >
             Crear primera cuenta
           </Button>
         </div>
@@ -174,7 +232,7 @@ function AccountsPageContent() {
             return (
               <div
                 key={account.id}
-                className="bg-card border border-border rounded-lg p-4"
+                className={`bg-card border-2 ${getAccountColorClass(account.color)} rounded-lg p-4`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -184,7 +242,7 @@ function AccountsPageContent() {
                     </p>
                     {account.initialBalance !== undefined && (
                       <p className="text-lg font-semibold text-primary mt-1">
-                        {formatCLP(account.initialBalance)}
+                        {formatCLP(calculateAccountBalance(account.id, account.initialBalance))}
                       </p>
                     )}
                   </div>
@@ -247,6 +305,7 @@ function AccountsPageContent() {
       >
         <AccountForm
           account={editingAccount || undefined}
+          existingAccounts={accounts}
           onSubmit={editingAccount ? handleEditAccount : handleCreateAccount}
           onCancel={closeModal}
         />

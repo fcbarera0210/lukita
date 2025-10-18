@@ -23,7 +23,8 @@ import {
   Plane,
   Gift,
   DollarSign,
-  Briefcase
+  Briefcase,
+  ArrowRightLeft
 } from 'lucide-react';
 
 const iconMap = {
@@ -39,6 +40,7 @@ const iconMap = {
   gift: Gift,
   'dollar-sign': DollarSign,
   briefcase: Briefcase,
+  'arrow-right-left': ArrowRightLeft,
 };
 
 function CategoriesPageContent() {
@@ -204,7 +206,9 @@ function CategoriesPageContent() {
           </div>
         ) : (
           <div className="space-y-3">
-            {categories.map((category) => {
+            {categories
+              .filter(category => category.name !== 'transferencia entre cuentas') // Ocultar categoría del sistema
+              .map((category) => {
               const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Tag;
               const isMenuOpen = openMenuId === category.id;
               

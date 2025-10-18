@@ -15,6 +15,15 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
+### 🆕 Novedades v0.3.0
+- **🎨 Sistema de Colores para Cuentas**: Paleta de 8 colores únicos para diferenciar cuentas visualmente
+- **📊 Gráficos de Resumen Mensual**: Barras horizontales en dashboard y gráfico de torta en transacciones
+- **💸 Transferencias entre Cuentas**: Funcionalidad completa con operaciones atómicas y diseño especial
+- **🔢 Límite de Cuentas**: Máximo de 8 cuentas con validación inteligente y mensajes dinámicos
+- **🎯 Bordes Coloreados**: Identificación visual rápida de cuentas en todas las listas
+- **🔗 URLs Inteligentes Mejoradas**: Soporte case-insensitive y abreviaciones (i/g para ingreso/gasto)
+- **⚡ Sincronización Mejorada**: Sistema de eventos personalizados para actualizaciones en tiempo real
+
 ### 🆕 Novedades v0.2.2
 - **Dashboard Mejorado**: Las transacciones recientes muestran el nombre de la categoría cuando no tienen descripción
 - **URLs Inteligentes Optimizadas**: Búsqueda más flexible de categorías y cuentas por nombre con coincidencias parciales
@@ -259,7 +268,7 @@ src/
 
 ## 🔗 URLs Inteligentes (v0.2+)
 
-Lukita soporta la creación de transacciones mediante URLs con parámetros pre-llenados, ideal para atajos de iPhone y integraciones. **v0.2.2** incluye mejoras significativas en la búsqueda y selección automática de campos.
+Lukita soporta la creación de transacciones mediante URLs con parámetros pre-llenados, ideal para atajos de iPhone y integraciones. **v0.3.0** incluye mejoras significativas en flexibilidad y búsqueda inteligente.
 
 ### Sintaxis
 ```
@@ -267,7 +276,7 @@ Lukita soporta la creación de transacciones mediante URLs con parámetros pre-l
 ```
 
 ### Parámetros Disponibles
-- `type`: `ingreso` o `gasto`
+- `type`: `ingreso`/`gasto` (case-insensitive) o abreviaciones `i`/`g`
 - `amount`: Monto numérico (ej: `5000`)
 - `note`: Descripción de la transacción
 - `category`: Nombre de la categoría (búsqueda inteligente por nombre)
@@ -299,6 +308,31 @@ La búsqueda de categorías y cuentas por nombre es ahora más flexible:
 - **Integraciones**: Sistemas externos pueden crear transacciones via URL
 - **Bookmarks**: Guardar URLs para transacciones frecuentes
 - **Compartir**: Enviar enlaces para crear transacciones específicas
+
+## 💸 Transferencias entre Cuentas (v0.3+)
+
+Lukita incluye funcionalidad completa de transferencias entre cuentas con operaciones atómicas y diseño especial.
+
+### Características
+- **Operación Atómica**: Actualización simultánea de balances usando Firebase batch
+- **Transacciones Automáticas**: Se crean automáticamente para el historial
+- **Categoría del Sistema**: "transferencia entre cuentas" creada automáticamente
+- **Diseño Especial**: Bordes laterales y icono ArrowRightLeft en el historial
+- **Validación de Saldo**: Verificación de saldo suficiente antes de transferir
+- **Acceso Múltiple**: Disponible desde FAB y pantalla de transacciones
+
+### Requisitos
+- Mínimo 2 cuentas creadas
+- Saldo suficiente en cuenta origen
+- Cuentas diferentes para origen y destino
+
+### Flujo de Transferencia
+1. Seleccionar cuenta origen y destino
+2. Ingresar monto con formato CLP
+3. Agregar nota opcional
+4. Confirmar transferencia
+5. Balances se actualizan automáticamente
+6. Aparece en historial con diseño especial
 
 ## 📄 Licencia
 

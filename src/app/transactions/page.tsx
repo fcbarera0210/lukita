@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical, ChevronDown, ChevronUp, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/lib/firestore';
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, createTransfer } from '@/lib/firestore';
 import { getAccounts } from '@/lib/firestore';
 import { getCategories } from '@/lib/firestore';
 import { Transaction } from '@/types/transaction';
@@ -12,6 +12,8 @@ import { Category } from '@/types/category';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { TransactionForm } from '@/components/forms/TransactionForm';
+import { TransferForm } from '@/components/forms/TransferForm';
+import { TransferFormData } from '@/schemas/transfer.schema';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP } from '@/lib/clp';
 import { formatDate } from '@/lib/dates';
@@ -19,6 +21,9 @@ import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { useFabContext } from '@/components/ConditionalLayout';
+import { getAccountColorClass } from '@/lib/account-colors';
+import { PieChart } from '@/components/charts';
+import { addCustomEventListener, CUSTOM_EVENTS } from '@/lib/custom-events';
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -28,6 +33,7 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
@@ -37,9 +43,11 @@ export default function TransactionsPage() {
     startDate: '',
     endDate: '',
   });
+  const [showChart, setShowChart] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const { showToast } = useToast();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -61,11 +69,20 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, showToast]);
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [loadData]);
+
+  // Escuchar eventos de actualización de transacciones
+  useEffect(() => {
+    const removeListener = addCustomEventListener(CUSTOM_EVENTS.REFRESH_TRANSACTIONS, () => {
+      loadData();
+    });
+
+    return removeListener;
+  }, [loadData]);
 
   const handleCreateTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     if (!user) return;
@@ -115,9 +132,40 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleCreateTransfer = async (data: TransferFormData) => {
+    if (!user) return;
+    
+    try {
+      await createTransfer(user.uid, data);
+      setIsTransferModalOpen(false);
+      setIsFormOpen(false); // ✅ Restaurar FAB
+      await loadData();
+      showToast({
+        type: 'success',
+        title: 'Transferencia realizada',
+        description: 'La transferencia se ha realizado exitosamente',
+      });
+    } catch (error) {
+      throw error; // Re-throw para que el formulario maneje el error
+    }
+  };
+
   const openCreateModal = () => {
     setEditingTransaction(null);
     setIsModalOpen(true);
+    setIsFormOpen(true);
+  };
+
+  const openTransferModal = () => {
+    if (accounts.length < 2) {
+      showToast({
+        type: 'error',
+        title: 'Cuentas insuficientes',
+        description: 'Necesitas al menos 2 cuentas para realizar transferencias',
+      });
+      return;
+    }
+    setIsTransferModalOpen(true);
     setIsFormOpen(true);
   };
 
@@ -151,6 +199,41 @@ export default function TransactionsPage() {
     return true;
   });
 
+  // Calcular datos para el gráfico de torta (solo gastos del mes actual, respetando filtros)
+  const getMonthlyExpensesData = () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getTime();
+    
+    // Usar transacciones filtradas pero solo gastos del mes actual
+    const monthlyExpenses = filteredTransactions.filter(transaction => 
+      transaction.type === 'gasto' && 
+      transaction.date >= startOfMonth && 
+      transaction.date <= endOfMonth
+    );
+
+    const categoryTotals = monthlyExpenses.reduce((acc, transaction) => {
+      const categoryId = transaction.categoryId;
+      if (!acc[categoryId]) {
+        acc[categoryId] = { amount: 0, category: categories.find(c => c.id === categoryId) };
+      }
+      acc[categoryId].amount += transaction.amount;
+      return acc;
+    }, {} as Record<string, { amount: number; category: Category | undefined }>);
+
+    const totalExpenses = Object.values(categoryTotals).reduce((sum, item) => sum + item.amount, 0);
+    
+    return Object.entries(categoryTotals)
+      .filter(([_, data]) => data.category) // Solo categorías válidas
+      .map(([categoryId, data]) => ({
+        categoryId,
+        amount: data.amount,
+        category: data.category!,
+        percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0
+      }))
+      .sort((a, b) => b.amount - a.amount); // Ordenar por monto descendente
+  };
+
   const getAccountName = (accountId: string) => {
     const account = accounts.find(acc => acc.id === accountId);
     return account?.name || 'Cuenta desconocida';
@@ -163,87 +246,158 @@ export default function TransactionsPage() {
 
   if (loading) {
     return (
-      
-        <div className="p-4">
-          <div className="animate-pulse space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-card rounded-lg"></div>
-            ))}
-          </div>
+      <div className="p-4">
+        <div className="animate-pulse space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 bg-card rounded-lg"></div>
+          ))}
         </div>
-      
+      </div>
     );
   }
 
   return (
-    
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CreditCard className="h-8 w-8 text-muted-foreground" />
             <h1 className="text-2xl font-bold">Transacciones</h1>
           </div>
-          <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
-            <Plus className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={openTransferModal} 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10"
+              title="Transferir entre cuentas"
+            >
+              <ArrowRightLeft className="h-4 w-4" />
+            </Button>
+            <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-4 w-4" />
-            <h3 className="font-medium">Filtros</h3>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Filtros</h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              {showFilters ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Ocultar filtros
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Mostrar filtros
+                </>
+              )}
+            </Button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Tipo</label>
-              <Select
-                value={filters.type}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              >
-                <option value="">Todos</option>
-                <option value="ingreso">Ingresos</option>
-                <option value="gasto">Gastos</option>
-              </Select>
+          
+          {showFilters && (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tipo</label>
+                    <Select
+                      value={filters.type}
+                      onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                    >
+                      <option value="">Todos</option>
+                      <option value="ingreso">Ingresos</option>
+                      <option value="gasto">Gastos</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Cuenta</label>
+                    <Select
+                      value={filters.accountId}
+                      onChange={(e) => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
+                    >
+                      <option value="">Todas</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Categoría</label>
+                    <Select
+                      value={filters.categoryId}
+                      onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+                    >
+                      <option value="">Todas</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha desde</label>
+                    <Input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Cuenta</label>
-              <Select
-                value={filters.accountId}
-                onChange={(e) => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
-              >
-                <option value="">Todas</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Categoría</label>
-              <Select
-                value={filters.categoryId}
-                onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-              >
-                <option value="">Todas</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Fecha desde</label>
-              <Input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
-          </div>
+          )}
         </div>
+
+        {/* Gráfico de Gastos Mensuales */}
+        {getMonthlyExpensesData().length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Gastos del Mes</h2>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setShowChart(!showChart)}
+                className="flex items-center gap-2"
+              >
+                {showChart ? (
+                  <>
+                    <ChevronUp className="h-4 w-4" />
+                    Ocultar gráfico
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4" />
+                    Ver gráfico
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {showChart && (
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="animate-in slide-in-from-top-2 duration-200">
+                  <PieChart data={getMonthlyExpensesData()} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-12">
@@ -270,17 +424,27 @@ export default function TransactionsPage() {
               const account = accounts.find(a => a.id === transaction.accountId);
               const CategoryIcon = getCategoryIcon(category?.icon);
               const isMenuOpen = openMenuId === transaction.id;
+              const accountColorClass = account ? getAccountColorClass(account.color) : 'border-border';
+              
+              // Detectar si es una transferencia
+              const isTransfer = category?.name === 'transferencia entre cuentas';
               
               return (
                 <div
                   key={transaction.id}
-                  className="bg-card border border-border rounded-lg p-4"
+                  className={`bg-card border-2 ${accountColorClass} rounded-lg p-4 ${
+                    isTransfer ? 'border-l-4 border-r-4' : ''
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     {/* Left side - Category icon */}
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="p-2 rounded-full bg-muted/50">
-                        <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                      <div className={`p-2 rounded-full ${isTransfer ? 'bg-blue-500/20' : 'bg-muted/50'}`}>
+                        {isTransfer ? (
+                          <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                        )}
                       </div>
                       
                       {/* Transaction details */}
@@ -378,7 +542,24 @@ export default function TransactionsPage() {
             onCancel={closeModal}
           />
         </Modal>
+
+        <Modal
+          isOpen={isTransferModalOpen}
+          onClose={() => {
+            setIsTransferModalOpen(false);
+            setIsFormOpen(false); // ✅ Restaurar FAB al cerrar
+          }}
+          title="Transferir entre Cuentas"
+        >
+          <TransferForm
+            accounts={accounts}
+            onSubmit={handleCreateTransfer}
+            onCancel={() => {
+              setIsTransferModalOpen(false);
+              setIsFormOpen(false); // ✅ Restaurar FAB al cancelar
+            }}
+          />
+        </Modal>
       </div>
-    
-  );
-}
+    );
+  }

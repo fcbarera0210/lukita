@@ -11,6 +11,13 @@ import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, LogIn } from 'lucide-react';
+import { 
+  parseTransactionType, 
+  parseAmount, 
+  findCategoryByName, 
+  findAccountByName,
+  parseTransactionUrlParams 
+} from '@/lib/url-parsing';
 
 function NewTransactionPageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -22,14 +29,15 @@ function NewTransactionPageContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [, setLoading] = useState(true);
 
-  // Obtener parámetros de la URL
-  const urlType = searchParams.get('type') as 'ingreso' | 'gasto' | null;
-  const urlAmount = searchParams.get('amount');
-  const urlNote = searchParams.get('note');
-  const urlCategoryId = searchParams.get('categoryId');
-  const urlAccountId = searchParams.get('accountId');
-  const urlCategoryName = searchParams.get('category');
-  const urlAccountName = searchParams.get('account');
+  // Obtener parámetros de la URL usando las nuevas utilidades
+  const urlParams = parseTransactionUrlParams(searchParams);
+  const urlType = parseTransactionType(urlParams.type);
+  const urlAmount = parseAmount(urlParams.amount);
+  const urlNote = urlParams.note || '';
+  const urlCategoryId = urlParams.categoryId || '';
+  const urlAccountId = urlParams.accountId || '';
+  const urlCategoryName = urlParams.category || '';
+  const urlAccountName = urlParams.account || '';
 
   useEffect(() => {
     const loadData = async () => {
@@ -82,39 +90,25 @@ function NewTransactionPageContent() {
 
   // Preparar valores por defecto basados en parámetros URL
   const defaultValues = useMemo(() => {
-    // Buscar categoría por ID o por nombre
+    // Buscar categoría por ID o por nombre usando la nueva utilidad
     let categoryId = urlCategoryId || '';
     if (!categoryId && urlCategoryName && categories.length > 0) {
-      const searchTerm = urlCategoryName.toLowerCase().trim();
-      const foundCategory = categories.find(cat => {
-        const categoryName = cat.name.toLowerCase().trim();
-        return categoryName === searchTerm || 
-               categoryName.includes(searchTerm) || 
-               searchTerm.includes(categoryName);
-      });
-      categoryId = foundCategory?.id || '';
+      categoryId = findCategoryByName(urlCategoryName, categories);
     }
 
-    // Buscar cuenta por ID o por nombre
+    // Buscar cuenta por ID o por nombre usando la nueva utilidad
     let accountId = urlAccountId || '';
     if (!accountId && urlAccountName && accounts.length > 0) {
-      const searchTerm = urlAccountName.toLowerCase().trim();
-      const foundAccount = accounts.find(acc => {
-        const accountName = acc.name.toLowerCase().trim();
-        return accountName === searchTerm || 
-               accountName.includes(searchTerm) || 
-               searchTerm.includes(accountName);
-      });
-      accountId = foundAccount?.id || '';
+      accountId = findAccountByName(urlAccountName, accounts);
     }
 
     return {
       type: urlType || 'gasto',
-      amount: urlAmount ? parseInt(urlAmount) || 0 : 0,
+      amount: urlAmount,
       date: Date.now(),
       accountId,
       categoryId,
-      note: urlNote || '',
+      note: urlNote,
     };
   }, [urlType, urlAmount, urlNote, urlCategoryId, urlAccountId, urlCategoryName, urlAccountName, categories, accounts]);
 

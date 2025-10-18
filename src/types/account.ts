@@ -1,3 +1,5 @@
+import { AccountColorId } from '@/lib/account-colors';
+
 export type AccountType = 'efectivo' | 'cuenta_corriente' | 'tarjeta' | 'ahorro' | 'otro';
 
 export interface Account {
@@ -5,5 +7,6 @@ export interface Account {
   name: string;
   type: AccountType;
   initialBalance: number;
+  color: AccountColorId;
   createdAt: number;
 }
