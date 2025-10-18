@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, getCategories, createTransaction } from '@/lib/firestore';
@@ -80,6 +80,44 @@ function NewTransactionPageContent() {
     router.push('/transactions');
   };
 
+  // Preparar valores por defecto basados en parámetros URL
+  const defaultValues = useMemo(() => {
+    // Buscar categoría por ID o por nombre
+    let categoryId = urlCategoryId || '';
+    if (!categoryId && urlCategoryName && categories.length > 0) {
+      const searchTerm = urlCategoryName.toLowerCase().trim();
+      const foundCategory = categories.find(cat => {
+        const categoryName = cat.name.toLowerCase().trim();
+        return categoryName === searchTerm || 
+               categoryName.includes(searchTerm) || 
+               searchTerm.includes(categoryName);
+      });
+      categoryId = foundCategory?.id || '';
+    }
+
+    // Buscar cuenta por ID o por nombre
+    let accountId = urlAccountId || '';
+    if (!accountId && urlAccountName && accounts.length > 0) {
+      const searchTerm = urlAccountName.toLowerCase().trim();
+      const foundAccount = accounts.find(acc => {
+        const accountName = acc.name.toLowerCase().trim();
+        return accountName === searchTerm || 
+               accountName.includes(searchTerm) || 
+               searchTerm.includes(accountName);
+      });
+      accountId = foundAccount?.id || '';
+    }
+
+    return {
+      type: urlType || 'gasto',
+      amount: urlAmount ? parseInt(urlAmount) || 0 : 0,
+      date: Date.now(),
+      accountId,
+      categoryId,
+      note: urlNote || '',
+    };
+  }, [urlType, urlAmount, urlNote, urlCategoryId, urlAccountId, urlCategoryName, urlAccountName, categories, accounts]);
+
   // Mostrar loading solo si authLoading es true
   if (authLoading) {
     return (
@@ -124,38 +162,6 @@ function NewTransactionPageContent() {
       </div>
     );
   }
-
-  // Preparar valores por defecto basados en parámetros URL
-  const getDefaultValues = () => {
-    // Buscar categoría por ID o por nombre
-    let categoryId = urlCategoryId || '';
-    if (!categoryId && urlCategoryName && categories.length > 0) {
-      const foundCategory = categories.find(cat => 
-        cat.name.toLowerCase() === urlCategoryName.toLowerCase()
-      );
-      categoryId = foundCategory?.id || '';
-    }
-
-    // Buscar cuenta por ID o por nombre
-    let accountId = urlAccountId || '';
-    if (!accountId && urlAccountName && accounts.length > 0) {
-      const foundAccount = accounts.find(acc => 
-        acc.name.toLowerCase() === urlAccountName.toLowerCase()
-      );
-      accountId = foundAccount?.id || '';
-    }
-
-    return {
-      type: urlType || 'gasto',
-      amount: urlAmount ? parseInt(urlAmount) || 0 : 0,
-      date: Date.now(),
-      accountId,
-      categoryId,
-      note: urlNote || '',
-    };
-  };
-
-  const defaultValues = getDefaultValues();
 
   return (
     <div className="p-4 space-y-4">

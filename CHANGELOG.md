@@ -5,6 +5,31 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere al [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 16-01-2025
+
+### ✨ Agregado
+- **Dashboard Mejorado**: Las transacciones recientes ahora muestran el nombre de la categoría cuando no tienen descripción, manteniendo consistencia con la pantalla de transacciones
+- **URLs Inteligentes Mejoradas**: 
+  - Búsqueda más flexible de categorías y cuentas por nombre
+  - Soporte para coincidencias parciales y sin distinción de mayúsculas/minúsculas
+  - Mejor manejo de espacios en blanco en los nombres
+
+### 🔄 Cambiado
+- **Formulario de Transacciones**: 
+  - Mejorado el manejo de valores por defecto desde URLs
+  - Los campos ahora se actualizan correctamente cuando se cargan los datos de forma asíncrona
+  - Búsqueda inteligente de categorías y cuentas por nombre
+
+### 🐛 Corregido
+- **Selección de Campos**: Corregido problema donde la cuenta y categoría no se seleccionaban automáticamente desde URLs con parámetros
+- **React Hooks**: Corregido error de hooks condicionales que causaba problemas de renderizado
+- **Timing de Datos**: Mejorado el manejo de carga asíncrona de datos para URLs inteligentes
+
+### 🔧 Técnico
+- **TransactionForm**: Agregado `useEffect` para actualizar valores del formulario cuando cambian los `defaultValues`
+- **Búsqueda Inteligente**: Implementada lógica de búsqueda más robusta para nombres de categorías y cuentas
+- **Performance**: Optimizado el orden de ejecución de hooks para evitar errores de React
+
 ## [0.2.1] - 16-10-2025
 
 ### 🐛 Corregido

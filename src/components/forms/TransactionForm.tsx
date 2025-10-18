@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { transactionSchema, TransactionFormData } from '@/schemas/transaction.schema';
@@ -54,6 +54,18 @@ export function TransactionForm({
   const type = watch('type');
   const amount = watch('amount');
   const date = watch('date');
+
+  // Actualizar valores cuando cambien los defaultValues (para URLs con parámetros)
+  useEffect(() => {
+    if (defaultValues) {
+      if (defaultValues.type) setValue('type', defaultValues.type);
+      if (defaultValues.amount) setValue('amount', defaultValues.amount);
+      if (defaultValues.date) setValue('date', defaultValues.date);
+      if (defaultValues.accountId) setValue('accountId', defaultValues.accountId);
+      if (defaultValues.categoryId) setValue('categoryId', defaultValues.categoryId);
+      if (defaultValues.note) setValue('note', defaultValues.note);
+    }
+  }, [defaultValues, setValue]);
 
   // Mostrar todas las categorías disponibles (universales)
   const filteredCategories = categories;

@@ -418,7 +418,10 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="font-medium">
-                        {transaction.note || 'Sin descripción'}
+                        {transaction.note || (() => {
+                          const category = categories.find(c => c.id === transaction.categoryId);
+                          return category?.name || 'Sin descripción';
+                        })()}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {(() => {

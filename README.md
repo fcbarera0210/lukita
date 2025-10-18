@@ -15,6 +15,12 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
+### 🆕 Novedades v0.2.2
+- **Dashboard Mejorado**: Las transacciones recientes muestran el nombre de la categoría cuando no tienen descripción
+- **URLs Inteligentes Optimizadas**: Búsqueda más flexible de categorías y cuentas por nombre con coincidencias parciales
+- **Formularios Mejorados**: Mejor manejo de valores por defecto y carga asíncrona de datos
+- **Correcciones de Bugs**: Solucionados problemas de selección automática de campos desde URLs
+
 ### 🆕 Novedades v0.2
 - **Categorías Universales**: Las categorías ya no están limitadas a ingreso/gasto, se especifica el tipo al crear la transacción
 - **Resumen Mensual**: Nueva card en el dashboard con navegación entre meses y desglose por categorías
@@ -251,9 +257,9 @@ src/
 - Comprobar que el service worker esté funcionando
 - Revisar la consola del navegador para errores
 
-## 🔗 URLs Inteligentes (v0.2)
+## 🔗 URLs Inteligentes (v0.2+)
 
-Lukita soporta la creación de transacciones mediante URLs con parámetros pre-llenados, ideal para atajos de iPhone y integraciones.
+Lukita soporta la creación de transacciones mediante URLs con parámetros pre-llenados, ideal para atajos de iPhone y integraciones. **v0.2.2** incluye mejoras significativas en la búsqueda y selección automática de campos.
 
 ### Sintaxis
 ```
@@ -264,10 +270,17 @@ Lukita soporta la creación de transacciones mediante URLs con parámetros pre-l
 - `type`: `ingreso` o `gasto`
 - `amount`: Monto numérico (ej: `5000`)
 - `note`: Descripción de la transacción
-- `category`: Nombre de la categoría (búsqueda por nombre)
-- `account`: Nombre de la cuenta (búsqueda por nombre)
+- `category`: Nombre de la categoría (búsqueda inteligente por nombre)
+- `account`: Nombre de la cuenta (búsqueda inteligente por nombre)
 - `categoryId`: ID de la categoría (alternativo a `category`)
 - `accountId`: ID de la cuenta (alternativo a `account`)
+
+### 🔍 Búsqueda Inteligente (v0.2.2+)
+La búsqueda de categorías y cuentas por nombre es ahora más flexible:
+- **Coincidencias exactas**: `"comidas"` encuentra `"Comidas"`
+- **Coincidencias parciales**: `"comida"` encuentra `"Comidas"`
+- **Sin distinción de mayúsculas**: `"COMIDA"` encuentra `"comidas"`
+- **Espacios ignorados**: `"banco chile"` encuentra `"Banco Chile"`
 
 ### Ejemplos
 ```bash
