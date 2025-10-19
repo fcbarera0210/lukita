@@ -119,7 +119,7 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
           {...register('amount', {
             setValueAs: (value) => parseCLP(value),
           })}
-          value={formatCLP(amount)}
+          value={amount ? formatCLP(amount) : ''}
           onChange={(e) => {
             const parsed = parseCLP(e.target.value);
             setValue('amount', parsed);

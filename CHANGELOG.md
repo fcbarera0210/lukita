@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere al [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 18-01-2025
+
+### 🐛 Corregido
+- **Formulario de Transferencias**: Corregido error "str.replace is not a function" al abrir el formulario
+- **Funciones CLP**: Mejorado manejo de valores nulos/indefinidos en `formatCLP` y `parseCLP`
+- **Validación de Tipos**: Agregada validación robusta para evitar errores de tipo en campos de monto
+
+### 🔧 Técnico
+- **formatCLP**: Ahora maneja valores `undefined`, `null` y `NaN` correctamente
+- **parseCLP**: Convertido para aceptar múltiples tipos de entrada y manejar casos edge
+- **TransferForm**: Validación mejorada del campo amount antes de formatear
+
 ## [0.3.0] - 18-01-2025
 
 ### ✨ Agregado
