@@ -15,6 +15,15 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
+### 🆕 Novedades v0.4.3
+- **🔍 Búsqueda Avanzada**: Sistema completo de filtros con múltiples criterios
+- **💾 Vistas Guardadas**: Guarda y carga configuraciones de filtros personalizadas
+- **🎯 Filtros Múltiples**: Selección múltiple de cuentas y categorías
+- **💰 Rango de Montos**: Filtrado por montos mínimo y máximo
+- **📝 Búsqueda de Texto**: Filtrado por contenido en notas de transacciones
+- **📅 Rango de Fechas**: Filtrado por períodos personalizables
+- **🎨 UI Optimizada**: Interfaz mejorada con botones reorganizados y flujo intuitivo
+
 ### 🆕 Novedades v0.3.0
 - **🎨 Sistema de Colores para Cuentas**: Paleta de 8 colores únicos para diferenciar cuentas visualmente
 - **📊 Gráficos de Resumen Mensual**: Barras horizontales en dashboard y gráfico de torta en transacciones

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical, ChevronDown, ChevronUp, ArrowRightLeft } from 'lucide-react';
+import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical, ChevronDown, ChevronUp, ArrowRightLeft, Receipt, Download } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction, createTransfer } from '@/lib/firestore';
 import { getAccounts } from '@/lib/firestore';
@@ -17,13 +17,24 @@ import { TransferFormData } from '@/schemas/transfer.schema';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP } from '@/lib/clp';
 import { formatDate } from '@/lib/dates';
-import { Select } from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { useFabContext } from '@/components/ConditionalLayout';
 import { getAccountColorClass } from '@/lib/account-colors';
 import { PieChart } from '@/components/charts';
+import { ExportData } from '@/components/ExportData';
 import { addCustomEventListener, CUSTOM_EVENTS } from '@/lib/custom-events';
+import { PageDescription } from '@/components/PageDescription';
+import { AdvancedFilters, AdvancedFiltersState, SavedView } from '@/components/AdvancedFilters';
+import { FilterActionButtons } from '@/components/FilterActionButtons';
+import { 
+  filterTransactions, 
+  createDefaultFilters, 
+  clearAllFilters, 
+  saveViewToStorage, 
+  getSavedViewsFromStorage, 
+  deleteViewFromStorage,
+  hasActiveFilters
+} from '@/lib/advanced-filters';
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -36,16 +47,22 @@ export default function TransactionsPage() {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [filters, setFilters] = useState({
-    type: '',
-    accountId: '',
-    categoryId: '',
-    startDate: '',
-    endDate: '',
-  });
+  const [filters, setFilters] = useState<AdvancedFiltersState>(createDefaultFilters());
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showChart, setShowChart] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const { showToast } = useToast();
+
+  const handleExport = (data: Record<string, unknown>[], filename: string) => {
+    showToast({
+      type: 'success',
+      title: 'Exportación exitosa',
+      description: `Se exportaron ${data.length} transacciones en ${filename}`
+    });
+    setIsExportModalOpen(false);
+    setIsFormOpen(false); // ✅ Restaurar FAB después de exportar
+  };
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -60,6 +77,10 @@ export default function TransactionsPage() {
       setTransactions(transactionsData);
       setAccounts(accountsData);
       setCategories(categoriesData);
+      
+      // Cargar vistas guardadas
+      const views = getSavedViewsFromStorage(user.uid);
+      setSavedViews(views);
     } catch (error) {
       showToast({
         type: 'error',
@@ -70,6 +91,60 @@ export default function TransactionsPage() {
       setLoading(false);
     }
   }, [user, showToast]);
+
+  // Funciones para manejar vistas guardadas
+  const handleSaveView = useCallback((name: string, filters: AdvancedFiltersState) => {
+    if (!user) return;
+    
+    try {
+      const newView = saveViewToStorage(name, filters, user.uid);
+      setSavedViews(prev => [...prev, newView]);
+      showToast({
+        type: 'success',
+        title: 'Vista guardada',
+        description: `La vista "${name}" se guardó correctamente`
+      });
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'No se pudo guardar la vista'
+      });
+    }
+  }, [user, showToast]);
+
+  const handleLoadView = useCallback((view: SavedView) => {
+    setFilters(view.filters);
+    showToast({
+      type: 'success',
+      title: 'Vista cargada',
+      description: `Se cargó la vista "${view.name}"`
+    });
+  }, [showToast]);
+
+  const handleDeleteView = useCallback((viewId: string) => {
+    if (!user) return;
+    
+    try {
+      deleteViewFromStorage(viewId, user.uid);
+      setSavedViews(prev => prev.filter(view => view.id !== viewId));
+      showToast({
+        type: 'success',
+        title: 'Vista eliminada',
+        description: 'La vista se eliminó correctamente'
+      });
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'No se pudo eliminar la vista'
+      });
+    }
+  }, [user, showToast]);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters(clearAllFilters());
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -191,15 +266,8 @@ export default function TransactionsPage() {
     setOpenMenuId(null);
   };
 
-  // Filtrar transacciones
-  const filteredTransactions = transactions.filter(transaction => {
-    if (filters.type && transaction.type !== filters.type) return false;
-    if (filters.accountId && transaction.accountId !== filters.accountId) return false;
-    if (filters.categoryId && transaction.categoryId !== filters.categoryId) return false;
-    if (filters.startDate && transaction.date < new Date(filters.startDate).getTime()) return false;
-    if (filters.endDate && transaction.date > new Date(filters.endDate).getTime()) return false;
-    return true;
-  });
+  // Filtrar transacciones usando la nueva función avanzada
+  const filteredTransactions = filterTransactions(transactions, filters);
 
   // Calcular datos para el gráfico de torta (solo gastos del mes actual, respetando filtros)
   const getMonthlyExpensesData = () => {
@@ -281,6 +349,13 @@ export default function TransactionsPage() {
           </div>
         </div>
 
+        {/* Page Description */}
+        <PageDescription
+          title="Gestión de Transacciones"
+          description="Administra y revisa todas tus transacciones financieras. Puedes filtrar por fecha, categoría, cuenta y tipo de transacción. Visualiza tus gastos mensuales con el gráfico de torta, crea nuevas transacciones, edita las existentes y exporta tus datos para análisis externos."
+          icon={<Receipt className="h-5 w-5 text-primary" />}
+        />
+
         {/* Filtros */}
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -288,80 +363,52 @@ export default function TransactionsPage() {
               <Filter className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">Filtros</h2>
             </div>
-            <Button
-              variant="ghost"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              {showFilters ? (
-                <>
+            <div className="flex items-center gap-2">
+              <FilterActionButtons
+                filters={filters}
+                savedViews={savedViews}
+                onSaveView={handleSaveView}
+                onLoadView={handleLoadView}
+                onDeleteView={handleDeleteView}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsExportModalOpen(true);
+                  setIsFormOpen(true); // ✅ Ocultar FAB al abrir modal
+                }}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exportar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-2"
+                title={showAdvancedFilters ? "Ocultar filtros" : "Mostrar filtros"}
+              >
+                {showAdvancedFilters ? (
                   <ChevronUp className="h-4 w-4" />
-                  Ocultar filtros
-                </>
-              ) : (
-                <>
+                ) : (
                   <ChevronDown className="h-4 w-4" />
-                  Mostrar filtros
-                </>
-              )}
-            </Button>
+                )}
+              </Button>
+            </div>
           </div>
           
-          {showFilters && (
-            <div className="bg-card border border-border rounded-lg p-6">
-              <div className="animate-in slide-in-from-top-2 duration-200">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Tipo</label>
-                    <Select
-                      value={filters.type}
-                      onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                    >
-                      <option value="">Todos</option>
-                      <option value="ingreso">Ingresos</option>
-                      <option value="gasto">Gastos</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Cuenta</label>
-                    <Select
-                      value={filters.accountId}
-                      onChange={(e) => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
-                    >
-                      <option value="">Todas</option>
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Categoría</label>
-                    <Select
-                      value={filters.categoryId}
-                      onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-                    >
-                      <option value="">Todas</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha desde</label>
-                    <Input
-                      type="date"
-                      value={filters.startDate}
-                      onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Componente de filtros avanzados */}
+          <AdvancedFilters
+            accounts={accounts}
+            categories={categories}
+            filters={filters}
+            onFiltersChange={setFilters}
+            isExpanded={showAdvancedFilters}
+            onSaveView={handleSaveView}
+            hasActiveFilters={hasActiveFilters(filters)}
+            onClearFilters={handleClearFilters}
+          />
         </div>
 
         {/* Gráfico de Gastos Mensuales */}
@@ -560,6 +607,23 @@ export default function TransactionsPage() {
               setIsTransferModalOpen(false);
               setIsFormOpen(false); // ✅ Restaurar FAB al cancelar
             }}
+          />
+        </Modal>
+
+        {/* Modal de Exportación */}
+        <Modal
+          isOpen={isExportModalOpen}
+          onClose={() => {
+            setIsExportModalOpen(false);
+            setIsFormOpen(false); // ✅ Restaurar FAB al cerrar modal
+          }}
+          title="Exportar Transacciones"
+        >
+          <ExportData
+            transactions={transactions}
+            accounts={accounts}
+            categories={categories}
+            onExport={handleExport}
           />
         </Modal>
       </div>

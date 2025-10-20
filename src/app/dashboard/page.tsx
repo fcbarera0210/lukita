@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft, Home, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { getAccounts, getTransactions, getTransactionsByDateRange, getCategories } from '@/lib/firestore';
+import { getAccounts, getTransactions, getTransactionsByDateRange, getCategories, getTrendData, TrendData, getMonthlyComparisonData, MonthlyComparisonData, getTopCategories, TopCategoryData } from '@/lib/firestore';
 import { Account } from '@/types/account';
 import { Transaction } from '@/types/transaction';
 import { Category } from '@/types/category';
@@ -13,7 +13,10 @@ import { formatDate, getPeriodFromCutoff } from '@/lib/dates';
 import { Button } from '@/components/ui/Button';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { getAccountColorClass } from '@/lib/account-colors';
-import { HorizontalBarChart } from '@/components/charts';
+import { HorizontalBarChart, TrendChart } from '@/components/charts';
+import { MonthlyComparison } from '@/components/MonthlyComparison';
+import { TopCategories } from '@/components/TopCategories';
+import { PageDescription } from '@/components/PageDescription';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -25,6 +28,12 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAccountsExpanded, setIsAccountsExpanded] = useState(false);
+  const [isTrendsExpanded, setIsTrendsExpanded] = useState(false);
+  const [isComparisonExpanded, setIsComparisonExpanded] = useState(false);
+  const [isTopCategoriesExpanded, setIsTopCategoriesExpanded] = useState(false);
+  const [trendData, setTrendData] = useState<TrendData[]>([]);
+  const [comparisonData, setComparisonData] = useState<MonthlyComparisonData | null>(null);
+  const [topCategoriesData, setTopCategoriesData] = useState<TopCategoryData[]>([]);
   const [monthlyData, setMonthlyData] = useState<{
     income: number;
     expenses: number;
@@ -42,17 +51,23 @@ export default function DashboardPage() {
     if (!user) return;
 
       try {
-        const [accountsData, recentTransactionsData, allTransactionsData, categoriesData] = await Promise.all([
+        const [accountsData, recentTransactionsData, allTransactionsData, categoriesData, trendDataResult, comparisonDataResult, topCategoriesResult] = await Promise.all([
           getAccounts(user.uid),
           getTransactions(user.uid, 5), // Últimas 5 transacciones para mostrar
           getTransactions(user.uid), // Todas las transacciones para calcular balance
           getCategories(user.uid),
+          getTrendData(user.uid, 'monthly', 12), // Datos de tendencias para últimos 12 meses
+          getMonthlyComparisonData(user.uid, selectedMonth), // Datos de comparación mensual
+          getTopCategories(user.uid, selectedMonth, 5), // Top 5 categorías del mes
         ]);
 
         setAccounts(accountsData);
         setRecentTransactions(recentTransactionsData);
         setAllTransactions(allTransactionsData);
         setCategories(categoriesData);
+        setTrendData(trendDataResult);
+        setComparisonData(comparisonDataResult);
+        setTopCategoriesData(topCategoriesResult);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -63,6 +78,60 @@ export default function DashboardPage() {
   useEffect(() => {
     loadData();
   }, [user]);
+
+  // Recargar tendencias cuando cambie el mes seleccionado
+  useEffect(() => {
+    if (user && trendData.length > 0) {
+      loadTrendDataForMonth();
+    }
+  }, [user, selectedMonth]);
+
+  // Recargar datos de comparación cuando cambie el mes
+  useEffect(() => {
+    if (user) {
+      loadComparisonData();
+    }
+  }, [user, selectedMonth]);
+
+  // Recargar top categorías cuando cambie el mes
+  useEffect(() => {
+    if (user) {
+      loadTopCategoriesData();
+    }
+  }, [user, selectedMonth]);
+
+  const loadTrendDataForMonth = async () => {
+    if (!user) return;
+    
+    try {
+      const data = await getTrendData(user.uid, 'monthly', 12);
+      setTrendData(data);
+    } catch (error) {
+      console.error('Error loading trend data for month:', error);
+    }
+  };
+
+  const loadComparisonData = async () => {
+    if (!user) return;
+    
+    try {
+      const data = await getMonthlyComparisonData(user.uid, selectedMonth);
+      setComparisonData(data);
+    } catch (error) {
+      console.error('Error loading comparison data:', error);
+    }
+  };
+
+  const loadTopCategoriesData = async () => {
+    if (!user) return;
+    
+    try {
+      const data = await getTopCategories(user.uid, selectedMonth, 5);
+      setTopCategoriesData(data);
+    } catch (error) {
+      console.error('Error loading top categories data:', error);
+    }
+  };
 
   // Escuchar eventos de actualización del dashboard
   useEffect(() => {
@@ -196,6 +265,13 @@ export default function DashboardPage() {
           Resumen de tus finanzas
         </p>
       </div>
+
+      {/* Page Description */}
+      <PageDescription
+        title="Panel de Control Financiero"
+        description="Bienvenido a tu panel de control financiero. Aquí puedes ver un resumen completo de tus finanzas: balance total, transacciones recientes, resumen mensual con gráficos por categoría, y comparaciones con meses anteriores. Usa los controles de fecha para navegar entre diferentes períodos."
+        icon={<Home className="h-5 w-5 text-primary" />}
+      />
 
       {/* Balance Total */}
       <div>
@@ -361,6 +437,140 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Comparación Mensual */}
+      {comparisonData && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Comparación Mensual</h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setIsComparisonExpanded(!isComparisonExpanded)}
+              className="flex items-center gap-2"
+            >
+              {isComparisonExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Ocultar comparación
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Ver comparación
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {isComparisonExpanded && (
+            <MonthlyComparison 
+              data={[
+                {
+                  current: comparisonData.current.income,
+                  previous: comparisonData.previous.income,
+                  label: 'Ingresos',
+                  type: 'income'
+                },
+                {
+                  current: comparisonData.current.expense,
+                  previous: comparisonData.previous.expense,
+                  label: 'Gastos',
+                  type: 'expense'
+                },
+                {
+                  current: comparisonData.current.balance,
+                  previous: comparisonData.previous.balance,
+                  label: 'Balance',
+                  type: 'balance'
+                }
+              ]}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Tendencias Mensuales */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Tendencias Mensuales</h2>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => setIsTrendsExpanded(!isTrendsExpanded)}
+            className="flex items-center gap-2"
+          >
+            {isTrendsExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Ocultar tendencias
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Ver tendencias
+              </>
+            )}
+          </Button>
+        </div>
+
+        {isTrendsExpanded && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <TrendChart
+              data={trendData}
+              type="income"
+              period="monthly"
+            />
+            <TrendChart
+              data={trendData}
+              type="expense"
+              period="monthly"
+            />
+            <TrendChart
+              data={trendData}
+              type="balance"
+              period="monthly"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Top Categorías */}
+      {topCategoriesData.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Top Categorías</h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setIsTopCategoriesExpanded(!isTopCategoriesExpanded)}
+              className="flex items-center gap-2"
+            >
+              {isTopCategoriesExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Ocultar ranking
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Ver ranking
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {isTopCategoriesExpanded && (
+            <TopCategories data={topCategoriesData} />
+          )}
+        </div>
+      )}
 
 
       {/* Transacciones Recientes */}

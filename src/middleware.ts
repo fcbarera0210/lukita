@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   
   // Solo aplicar middleware a rutas específicas
   const protectedRoutes = ['/dashboard', '/accounts', '/categories', '/transactions', '/settings'];
-  const authRoutes = ['/login', '/register'];
+  const authRoutes = ['/(auth)/login', '/(auth)/register'];
   
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));

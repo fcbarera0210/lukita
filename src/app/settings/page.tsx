@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Settings, LogOut, Moon, Sun, Monitor, Calendar, Lock, Eye, EyeOff } from 'lucide-react';
+import { Settings, LogOut, Moon, Sun, Monitor, Calendar, Lock, Eye, EyeOff, Cog } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getUserSettings, changePassword } from '@/lib/auth';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
+import { PageDescription } from '@/components/PageDescription';
 import { useFabContext } from '@/components/ConditionalLayout';
 
 export default function SettingsPage() {
@@ -213,6 +214,13 @@ export default function SettingsPage() {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Page Description */}
+        <PageDescription
+          title="Configuración de la Aplicación"
+          description="Personaliza tu experiencia con Lukita. Cambia entre tema claro y oscuro, actualiza tu información personal, modifica tu contraseña y gestiona la configuración de la aplicación."
+          icon={<Cog className="h-5 w-5 text-primary" />}
+        />
 
         {/* Configuración de Tema */}
         <div className="space-y-3">

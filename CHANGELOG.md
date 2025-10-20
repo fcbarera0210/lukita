@@ -5,6 +5,44 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere al [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 18-01-2025
+
+### ✨ Nuevas Funcionalidades
+- **Búsqueda Avanzada Completa**: Sistema de filtros avanzados con múltiples criterios
+- **Vistas Guardadas**: Capacidad de guardar y cargar configuraciones de filtros personalizadas
+- **Filtros Múltiples**: Selección múltiple de cuentas y categorías
+- **Rango de Montos**: Filtrado por rango mínimo y máximo de montos
+- **Búsqueda de Texto**: Filtrado por contenido en notas de transacciones
+- **Rango de Fechas**: Filtrado por período de fechas personalizable
+
+### 🎨 Mejoras de UI/UX
+- **Interfaz Optimizada**: Botones reorganizados para mejor flujo de trabajo
+- **Modal Centrado**: Vistas guardadas aparecen centradas en pantalla
+- **Botón Limpiar**: Acceso rápido para resetear todos los filtros
+- **Guardar en Contexto**: Botón de guardar vista ubicado en la card de filtros
+- **Cierre Automático**: Modal se cierra al cargar vista o hacer clic fuera
+
+### 🔧 Técnico
+- **Componente AdvancedFilters**: Nuevo componente modular para filtros avanzados
+- **FilterActionButtons**: Componente especializado para acciones de filtros
+- **Utilidades de Filtrado**: Funciones optimizadas para filtrado complejo
+- **LocalStorage**: Persistencia de vistas guardadas en navegador
+- **TypeScript**: Tipado completo para estados de filtros avanzados
+
+### 🎯 Funcionalidades Implementadas
+- ✅ **Filtros Básicos**: Tipo, cuenta, categoría, fechas
+- ✅ **Filtros Avanzados**: Múltiples cuentas, múltiples categorías, rango de montos
+- ✅ **Búsqueda de Texto**: Filtrado por contenido en notas
+- ✅ **Vistas Guardadas**: Guardar, cargar y eliminar configuraciones
+- ✅ **Interfaz Intuitiva**: Botones organizados y flujo optimizado
+- ✅ **Persistencia**: Vistas guardadas se mantienen entre sesiones
+
+### 📱 Experiencia de Usuario
+- **Flujo Optimizado**: Aplicar → Guardar → Cargar → Limpiar
+- **Acceso Rápido**: Botones de acción siempre visibles cuando hay filtros
+- **Feedback Visual**: Indicadores claros de filtros activos
+- **Navegación Intuitiva**: Modal centrado y fácil de cerrar
+
 ## [0.3.11] - 18-01-2025
 
 ### 🐛 Corregido

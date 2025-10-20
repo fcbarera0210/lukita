@@ -8,16 +8,18 @@ import { Category } from '@/types/category';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { categoryIcons, getCategoryIcon } from '@/lib/categoryIcons';
+import { getCategoryIcon } from '@/lib/categoryIcons';
+import { IconSelector } from '@/components/IconSelector';
 
 interface CategoryFormProps {
   category?: Category;
   onSubmit: (data: Omit<Category, 'id' | 'createdAt'>) => Promise<void>;
   onCancel: () => void;
+  usedIcons?: string[];
 }
 
 
-export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps) {
+export function CategoryForm({ category, onSubmit, onCancel, usedIcons = [] }: CategoryFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -80,28 +82,11 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
         <label className="block text-sm font-medium mb-2">
           Ícono
         </label>
-        <div className="grid grid-cols-6 gap-2">
-          {categoryIcons.map((iconOption) => {
-            const IconComponent = iconOption.icon;
-            const isSelected = selectedIcon === iconOption.value;
-            
-            return (
-              <button
-                key={iconOption.value}
-                type="button"
-                onClick={() => setValue('icon', iconOption.value)}
-                className={`p-3 rounded-lg border-2 transition-colors ${
-                  isSelected
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-primary/50'
-                }`}
-                title={iconOption.label}
-              >
-                <IconComponent className="h-5 w-5 mx-auto" />
-              </button>
-            );
-          })}
-        </div>
+        <IconSelector
+          selectedIcon={selectedIcon || 'utensils'}
+          onIconSelect={(iconId) => setValue('icon', iconId, { shouldValidate: false, shouldDirty: false })}
+          usedIcons={usedIcons}
+        />
         <input type="hidden" {...register('icon')} />
         {errors.icon && (
           <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>

@@ -11,7 +11,8 @@ import {
   Tag, 
   Settings,
   Plus,
-  ArrowRightLeft
+  ArrowRightLeft,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -49,6 +50,11 @@ const navigationItems = [
     name: 'Categorías',
     href: '/categories',
     icon: Tag,
+  },
+  {
+    name: 'Tendencias',
+    href: '/trends',
+    icon: TrendingUp,
   },
   {
     name: 'Ajustes',

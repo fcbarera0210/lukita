@@ -1,6 +1,6 @@
 {
   "name": "lukita",
-  "version": "0.3.11",
+  "version": "0.4.3",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

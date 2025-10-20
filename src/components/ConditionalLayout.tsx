@@ -4,7 +4,7 @@ import { useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navigation, FloatingActionButton } from '@/components/Navigation';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
-import { AutoLogin } from '@/components/AutoLogin';
+import { AuthGuard } from '@/components/AuthGuard';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -26,7 +26,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   
   // Rutas que no deben mostrar navegación
-  const authRoutes = ['/login', '/register'];
+  const authRoutes = ['/(auth)/login', '/(auth)/register'];
   const isAuthRoute = authRoutes.includes(pathname);
   
   // Rutas que no deben mostrar FAB
@@ -45,16 +45,17 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   }
 
   return (
-    <FabContext.Provider value={{ isFormOpen, setIsFormOpen }}>
-      <div className="min-h-screen bg-background">
-        <OfflineIndicator />
-        <AutoLogin />
-        <main className="pb-20">
-          {children}
-        </main>
-        <Navigation />
-        {!shouldHideFab && <FloatingActionButton />}
-      </div>
-    </FabContext.Provider>
+    <AuthGuard>
+      <FabContext.Provider value={{ isFormOpen, setIsFormOpen }}>
+        <div className="min-h-screen bg-background">
+          <OfflineIndicator />
+          <main className="pb-20">
+            {children}
+          </main>
+          <Navigation />
+          {!shouldHideFab && <FloatingActionButton />}
+        </div>
+      </FabContext.Provider>
+    </AuthGuard>
   );
 }

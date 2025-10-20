@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Tag, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Tag, Edit, Trash2, MoreVertical, Tags } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/lib/firestore';
 import { Category } from '@/types/category';
@@ -11,37 +11,10 @@ import { Modal } from '@/components/ui/Modal';
 import { CategoryForm } from '@/components/forms/CategoryForm';
 import { useToast } from '@/components/ui/Toast';
 import { useFabContext } from '@/components/ConditionalLayout';
-import { 
-  Utensils, 
-  Car, 
-  Home, 
-  ShoppingBag, 
-  Heart, 
-  GraduationCap,
-  Gamepad2,
-  Coffee,
-  Plane,
-  Gift,
-  DollarSign,
-  Briefcase,
-  ArrowRightLeft
-} from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
+import { PageDescription } from '@/components/PageDescription';
+import { getCategoryIcon } from '@/lib/categoryIcons';
 
-const iconMap = {
-  utensils: Utensils,
-  car: Car,
-  home: Home,
-  'shopping-bag': ShoppingBag,
-  heart: Heart,
-  'graduation-cap': GraduationCap,
-  'gamepad-2': Gamepad2,
-  coffee: Coffee,
-  plane: Plane,
-  gift: Gift,
-  'dollar-sign': DollarSign,
-  briefcase: Briefcase,
-  'arrow-right-left': ArrowRightLeft,
-};
 
 function CategoriesPageContent() {
   const { user } = useAuth();
@@ -193,6 +166,13 @@ function CategoriesPageContent() {
           </Button>
         </div>
 
+        {/* Page Description */}
+        <PageDescription
+          title="Gestión de Categorías"
+          description="Organiza tus gastos e ingresos con categorías personalizadas. Crea categorías con íconos únicos para clasificar tus transacciones. Personaliza nombres, íconos y tipos de categoría. La categoría 'transferencia entre cuentas' es del sistema y no se puede modificar."
+          icon={<Tags className="h-5 w-5 text-primary" />}
+        />
+
         {categories.length === 0 ? (
           <div className="text-center py-12">
             <Tag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -209,7 +189,7 @@ function CategoriesPageContent() {
             {categories
               .filter(category => category.name !== 'transferencia entre cuentas') // Ocultar categoría del sistema
               .map((category) => {
-              const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Tag;
+              const IconComponent = getCategoryIcon(category.icon);
               const isMenuOpen = openMenuId === category.id;
               
               return (
@@ -287,6 +267,7 @@ function CategoriesPageContent() {
             category={editingCategory || undefined}
             onSubmit={editingCategory ? handleEditCategory : handleCreateCategory}
             onCancel={closeModal}
+            usedIcons={categories.map(cat => cat.icon).filter((icon): icon is string => icon !== undefined && icon !== editingCategory?.icon)}
           />
         </Modal>
       </div>

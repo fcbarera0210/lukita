@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Wallet, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Wallet, Edit, Trash2, MoreVertical, Building2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, createAccount, updateAccount, deleteAccount, getTransactions } from '@/lib/firestore';
 import { Account } from '@/types/account';
@@ -15,6 +15,7 @@ import { formatCLP } from '@/lib/clp';
 import { useFabContext } from '@/components/ConditionalLayout';
 import { MAX_ACCOUNTS, getAccountColorClass } from '@/lib/account-colors';
 import { addCustomEventListener, CUSTOM_EVENTS, dispatchCustomEvent } from '@/lib/custom-events';
+import { PageDescription } from '@/components/PageDescription';
 
 function AccountsPageContent() {
   const { user } = useAuth();
@@ -219,6 +220,13 @@ function AccountsPageContent() {
           <Plus className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Page Description */}
+      <PageDescription
+        title="Gestión de Cuentas"
+        description="Gestiona todas tus cuentas bancarias y de efectivo. Crea hasta 8 cuentas con colores únicos para fácil identificación. Cada cuenta muestra su balance actual que se actualiza automáticamente con cada transacción. Las transferencias entre cuentas se reflejan aquí."
+        icon={<Building2 className="h-5 w-5 text-primary" />}
+      />
 
       {accounts.length === 0 ? (
         <div className="text-center py-12">

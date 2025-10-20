@@ -445,3 +445,262 @@ const getOrCreateTransferCategory = async (userId: string): Promise<string> => {
   
   return categoryRef.id;
 };
+
+// Funciones para gráficos de tendencias
+export interface TrendData {
+  period: string;
+  income: number;
+  expense: number;
+  balance: number;
+}
+
+export async function getTrendData(
+  userId: string, 
+  period: 'daily' | 'weekly' | 'monthly' = 'monthly',
+  months: number = 6
+): Promise<TrendData[]> {
+  try {
+    const transactions = await getTransactions(userId);
+    const accounts = await getAccounts(userId);
+    
+    // Calcular fechas de inicio y fin
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    switch (period) {
+      case 'daily':
+        startDate.setDate(endDate.getDate() - 30); // Últimos 30 días
+        break;
+      case 'weekly':
+        startDate.setDate(endDate.getDate() - (months * 7)); // Últimas N semanas
+        break;
+      case 'monthly':
+        startDate.setMonth(endDate.getMonth() - months); // Últimos N meses
+        break;
+    }
+
+    // Filtrar transacciones por período
+    const filteredTransactions = transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
+
+    // Agrupar por período
+    const groupedData: { [key: string]: { income: number; expense: number; balance: number } } = {};
+
+    filteredTransactions.forEach(transaction => {
+      let periodKey: string;
+      const transactionDate = new Date(transaction.date);
+
+      switch (period) {
+        case 'daily':
+          periodKey = transactionDate.toISOString().split('T')[0]; // YYYY-MM-DD
+          break;
+        case 'weekly':
+          const weekStart = new Date(transactionDate);
+          weekStart.setDate(transactionDate.getDate() - transactionDate.getDay());
+          periodKey = weekStart.toISOString().split('T')[0];
+          break;
+        case 'monthly':
+          periodKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        default:
+          periodKey = transactionDate.toISOString().split('T')[0];
+      }
+
+      if (!groupedData[periodKey]) {
+        groupedData[periodKey] = { income: 0, expense: 0, balance: 0 };
+      }
+
+      if (transaction.type === 'ingreso') {
+        groupedData[periodKey].income += transaction.amount;
+      } else if (transaction.type === 'gasto') {
+        groupedData[periodKey].expense += transaction.amount;
+      }
+    });
+
+    // Calcular balance acumulado
+    const sortedPeriods = Object.keys(groupedData).sort();
+    let runningBalance = 0;
+
+    // Obtener balance inicial de todas las cuentas
+    accounts.forEach(account => {
+      runningBalance += account.balance;
+    });
+
+    // Restar todas las transacciones para obtener balance inicial
+    transactions.forEach(transaction => {
+      if (transaction.type === 'ingreso') {
+        runningBalance -= transaction.amount;
+      } else if (transaction.type === 'gasto') {
+        runningBalance += transaction.amount;
+      }
+    });
+
+    const trendData: TrendData[] = sortedPeriods.map(periodKey => {
+      const data = groupedData[periodKey];
+      
+      if (period === 'monthly') {
+        runningBalance += data.income - data.expense;
+      } else {
+        runningBalance += data.income - data.expense;
+      }
+
+      return {
+        period: periodKey,
+        income: data.income,
+        expense: data.expense,
+        balance: runningBalance
+      };
+    });
+
+    return trendData;
+  } catch (error) {
+    console.error('Error getting trend data:', error);
+    return [];
+  }
+}
+
+export interface MonthlyComparisonData {
+  current: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+  previous: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+}
+
+export async function getMonthlyComparisonData(
+  userId: string,
+  selectedMonth: Date
+): Promise<MonthlyComparisonData> {
+  try {
+    const transactions = await getTransactions(userId);
+    const accounts = await getAccounts(userId);
+
+    // Calcular fechas para el mes actual y anterior
+    const currentMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+    const nextMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+    const previousMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1);
+    const previousNextMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+
+    // Filtrar transacciones del mes actual
+    const currentMonthTransactions = transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= currentMonth && transactionDate < nextMonth;
+    });
+
+    // Filtrar transacciones del mes anterior
+    const previousMonthTransactions = transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= previousMonth && transactionDate < previousNextMonth;
+    });
+
+    // Calcular datos del mes actual
+    const currentData = {
+      income: currentMonthTransactions
+        .filter(t => t.type === 'ingreso')
+        .reduce((sum, t) => sum + t.amount, 0),
+      expense: currentMonthTransactions
+        .filter(t => t.type === 'gasto')
+        .reduce((sum, t) => sum + t.amount, 0),
+      balance: 0 // Se calculará después
+    };
+
+    // Calcular datos del mes anterior
+    const previousData = {
+      income: previousMonthTransactions
+        .filter(t => t.type === 'ingreso')
+        .reduce((sum, t) => sum + t.amount, 0),
+      expense: previousMonthTransactions
+        .filter(t => t.type === 'gasto')
+        .reduce((sum, t) => sum + t.amount, 0),
+      balance: 0 // Se calculará después
+    };
+
+    // Calcular balances (ingresos - gastos)
+    currentData.balance = currentData.income - currentData.expense;
+    previousData.balance = previousData.income - previousData.expense;
+
+    return {
+      current: currentData,
+      previous: previousData
+    };
+  } catch (error) {
+    console.error('Error getting monthly comparison data:', error);
+    return {
+      current: { income: 0, expense: 0, balance: 0 },
+      previous: { income: 0, expense: 0, balance: 0 }
+    };
+  }
+}
+
+export interface TopCategoryData {
+  categoryId: string;
+  category: Category;
+  totalAmount: number;
+  transactionCount: number;
+  percentage: number;
+}
+
+export async function getTopCategories(
+  userId: string,
+  selectedMonth: Date,
+  limit: number = 5
+): Promise<TopCategoryData[]> {
+  try {
+    const transactions = await getTransactions(userId);
+    const categories = await getCategories(userId);
+
+    // Calcular fechas para el mes seleccionado
+    const startDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+    const endDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+
+    // Filtrar transacciones del mes seleccionado
+    const monthTransactions = transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= startDate && transactionDate < endDate && transaction.type === 'gasto';
+    });
+
+    // Agrupar por categoría
+    const categoryTotals: { [categoryId: string]: { amount: number; count: number } } = {};
+
+    monthTransactions.forEach(transaction => {
+      if (!categoryTotals[transaction.categoryId]) {
+        categoryTotals[transaction.categoryId] = { amount: 0, count: 0 };
+      }
+      categoryTotals[transaction.categoryId].amount += transaction.amount;
+      categoryTotals[transaction.categoryId].count += 1;
+    });
+
+    // Calcular total de gastos del mes
+    const totalExpenses = monthTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    // Convertir a array y ordenar por monto
+    const topCategories: TopCategoryData[] = Object.entries(categoryTotals)
+      .map(([categoryId, data]) => {
+        const category = categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        return {
+          categoryId,
+          category,
+          totalAmount: data.amount,
+          transactionCount: data.count,
+          percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0
+        };
+      })
+      .filter((item): item is TopCategoryData => item !== null)
+      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .slice(0, limit);
+
+    return topCategories;
+  } catch (error) {
+    console.error('Error getting top categories:', error);
+    return [];
+  }
+}
