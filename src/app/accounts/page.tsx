@@ -52,6 +52,12 @@ function AccountsPageContent() {
   // Función para calcular el balance real de una cuenta
   const calculateAccountBalance = (accountId: string, initialBalance: number) => {
     const accountTransactions = transactions.filter(t => t.accountId === accountId);
+    
+    console.log(`🔍 Debug Accounts - Cuenta ${accountId}:`);
+    console.log(`🔍 Debug Accounts - Saldo inicial usado:`, initialBalance);
+    console.log(`🔍 Debug Accounts - Transacciones encontradas:`, accountTransactions.length);
+    console.log(`🔍 Debug Accounts - Transacciones:`, accountTransactions.map(t => ({ type: t.type, amount: t.amount, note: t.note })));
+    
     const balance = accountTransactions.reduce((sum, transaction) => {
       if (transaction.type === 'ingreso') {
         return sum + transaction.amount;
@@ -59,6 +65,8 @@ function AccountsPageContent() {
         return sum - transaction.amount;
       }
     }, initialBalance);
+    
+    console.log(`🔍 Debug Accounts - Balance calculado:`, balance);
     return balance;
   };
 
@@ -115,7 +123,9 @@ function AccountsPageContent() {
     if (!user || !editingAccount) return;
     
     try {
-      await updateAccount(user.uid, editingAccount.id, data);
+      // Al editar, solo actualizar los campos que pueden cambiar, no el balance
+      const { balance, ...updateData } = data;
+      await updateAccount(user.uid, editingAccount.id, updateData);
       await loadAccounts(); // Cargar cuentas antes de cerrar el modal
       setEditingAccount(null);
       setIsModalOpen(false);
@@ -242,7 +252,7 @@ function AccountsPageContent() {
                     </p>
                     {account.initialBalance !== undefined && (
                       <p className="text-lg font-semibold text-primary mt-1">
-                        {formatCLP(calculateAccountBalance(account.id, account.initialBalance))}
+                        {formatCLP(account.balance || 0)}
                       </p>
                     )}
                   </div>

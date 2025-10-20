@@ -102,6 +102,8 @@ export default function TransactionsPage() {
     try {
       await updateTransaction(user.uid, editingTransaction.id, data);
       setEditingTransaction(null);
+      setIsModalOpen(false); // Cerrar el modal después de editar
+      setIsFormOpen(false); // ✅ Restaurar el FAB
       await loadData();
     } catch (error) {
       throw error; // Re-throw para que el formulario maneje el error

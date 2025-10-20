@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, getTransactions, getTransactionsByDateRange, getCategories } from '@/lib/firestore';
 import { Account } from '@/types/account';
@@ -155,8 +155,7 @@ export default function DashboardPage() {
   };
 
   const totalBalance = accounts.reduce((sum, account) => {
-    const currentBalance = calculateAccountBalance(account.id, account.initialBalance || 0);
-    return sum + currentBalance;
+    return sum + (account.balance || 0);
   }, 0);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -248,7 +247,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                     <span className="text-sm font-medium">
-                      {formatCLP(calculateAccountBalance(account.id, account.initialBalance || 0))}
+                      {formatCLP(account.balance || 0)}
                     </span>
                 </div>
               ))}
@@ -407,8 +406,14 @@ export default function DashboardPage() {
                     <div className="p-2 rounded-full bg-muted/50">
                       {(() => {
                         const category = categories.find(c => c.id === transaction.categoryId);
-                        const Icon = getCategoryIcon(category?.icon);
-                        return <Icon className="h-4 w-4 text-muted-foreground" />;
+                        const isTransfer = category?.name === 'transferencia entre cuentas';
+                        
+                        if (isTransfer) {
+                          return <ArrowRightLeft className="h-4 w-4 text-blue-500" />;
+                        } else {
+                          const Icon = getCategoryIcon(category?.icon);
+                          return <Icon className="h-4 w-4 text-muted-foreground" />;
+                        }
                       })()}
                     </div>
                     <div>

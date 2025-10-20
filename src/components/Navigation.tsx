@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useFabContext } from '@/components/ConditionalLayout';
 import { 
   Home, 
   CreditCard, 
@@ -92,6 +93,7 @@ export function Navigation() {
 export function FloatingActionButton() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { setIsFormOpen } = useFabContext();
   const [isOpen, setIsOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'transaction' | 'category' | 'account' | 'transfer' | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -144,7 +146,11 @@ export function FloatingActionButton() {
           getCategories(user.uid),
         ]);
         setAccounts(accountsData);
-        setCategories(categoriesData);
+        // Filtrar la categoría de transferencias (solo para el sistema)
+        const filteredCategories = categoriesData.filter(category => 
+          category.name !== 'transferencia entre cuentas'
+        );
+        setCategories(filteredCategories);
       } catch (error) {
         console.error('Error loading data for FAB:', error);
       }
@@ -181,6 +187,7 @@ export function FloatingActionButton() {
         description: 'La transacción ha sido creada exitosamente',
       });
       setActiveModal(null);
+      setIsFormOpen(false); // ✅ Restaurar el FAB
       // Disparar eventos para actualizar otras páginas
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_TRANSACTIONS);
@@ -204,6 +211,7 @@ export function FloatingActionButton() {
       setAccounts(accountsData);
       // Cerrar modal después de completar la operación
       setActiveModal(null);
+      setIsFormOpen(false); // ✅ Restaurar el FAB
       // Disparar eventos para actualizar otras páginas
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
@@ -223,9 +231,14 @@ export function FloatingActionButton() {
         description: 'La categoría ha sido creada exitosamente',
       });
       setActiveModal(null);
+      setIsFormOpen(false); // ✅ Restaurar el FAB
       // Recargar categorías
       const categoriesData = await getCategories(user.uid);
-      setCategories(categoriesData);
+      // Filtrar la categoría de transferencias (solo para el sistema)
+      const filteredCategories = categoriesData.filter(category => 
+        category.name !== 'transferencia entre cuentas'
+      );
+      setCategories(filteredCategories);
       // Disparar eventos para actualizar otras páginas
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_CATEGORIES);
@@ -245,6 +258,7 @@ export function FloatingActionButton() {
         description: 'La transferencia se ha realizado exitosamente',
       });
       setActiveModal(null);
+      setIsFormOpen(false); // ✅ Restaurar el FAB
       // Disparar eventos para actualizar otras páginas
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
@@ -328,14 +342,20 @@ export function FloatingActionButton() {
       {activeModal === 'transaction' && (
         <Modal
           isOpen={true}
-          onClose={() => setActiveModal(null)}
+          onClose={() => {
+            setActiveModal(null);
+            setIsFormOpen(false); // ✅ Restaurar el FAB
+          }}
           title="Nueva Transacción"
         >
           <TransactionForm
             accounts={accounts}
             categories={categories}
             onSubmit={handleCreateTransaction}
-            onCancel={() => setActiveModal(null)}
+            onCancel={() => {
+              setActiveModal(null);
+              setIsFormOpen(false); // ✅ Restaurar el FAB
+            }}
           />
         </Modal>
       )}
@@ -343,13 +363,19 @@ export function FloatingActionButton() {
       {activeModal === 'account' && (
         <Modal
           isOpen={true}
-          onClose={() => setActiveModal(null)}
+          onClose={() => {
+            setActiveModal(null);
+            setIsFormOpen(false); // ✅ Restaurar el FAB
+          }}
           title="Nueva Cuenta"
         >
           <AccountForm
             existingAccounts={accounts}
             onSubmit={handleCreateAccount}
-            onCancel={() => setActiveModal(null)}
+            onCancel={() => {
+              setActiveModal(null);
+              setIsFormOpen(false); // ✅ Restaurar el FAB
+            }}
           />
         </Modal>
       )}
@@ -357,12 +383,18 @@ export function FloatingActionButton() {
       {activeModal === 'category' && (
         <Modal
           isOpen={true}
-          onClose={() => setActiveModal(null)}
+          onClose={() => {
+            setActiveModal(null);
+            setIsFormOpen(false); // ✅ Restaurar el FAB
+          }}
           title="Nueva Categoría"
         >
           <CategoryForm
             onSubmit={handleCreateCategory}
-            onCancel={() => setActiveModal(null)}
+            onCancel={() => {
+              setActiveModal(null);
+              setIsFormOpen(false); // ✅ Restaurar el FAB
+            }}
           />
         </Modal>
       )}
@@ -370,13 +402,19 @@ export function FloatingActionButton() {
       {activeModal === 'transfer' && (
         <Modal
           isOpen={true}
-          onClose={() => setActiveModal(null)}
+          onClose={() => {
+            setActiveModal(null);
+            setIsFormOpen(false); // ✅ Restaurar el FAB
+          }}
           title="Transferir entre Cuentas"
         >
           <TransferForm
             accounts={accounts}
             onSubmit={handleCreateTransfer}
-            onCancel={() => setActiveModal(null)}
+            onCancel={() => {
+              setActiveModal(null);
+              setIsFormOpen(false); // ✅ Restaurar el FAB
+            }}
           />
         </Modal>
       )}

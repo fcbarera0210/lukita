@@ -5,6 +5,219 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere al [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.11] - 18-01-2025
+
+### 🐛 Corregido
+- **Categoría de Transferencias en Formularios**: Eliminada la categoría "transferencia entre cuentas" de los formularios de nueva transacción (FAB y página)
+- **Icono Inconsistente de Transferencias**: Corregido icono de transferencias en dashboard para usar `ArrowRightLeft` consistente con pantalla de transacciones
+
+### 🔧 Técnico
+- **Filtrado de Categorías**: 
+  - `src/app/transactions/new/page.tsx`: Filtrado de categoría "transferencia entre cuentas" antes de mostrar en formulario
+  - `src/components/Navigation.tsx`: Filtrado de categoría "transferencia entre cuentas" en FAB y recarga de categorías
+- **Icono Consistente**:
+  - `src/app/dashboard/page.tsx`: Agregado `ArrowRightLeft` import y lógica para detectar transferencias
+  - Dashboard ahora usa `ArrowRightLeft` para transferencias, igual que la pantalla de transacciones
+
+### 🎯 Problema Resuelto
+- **Antes**: 
+  - La categoría "transferencia entre cuentas" aparecía en formularios de nueva transacción (no debería)
+  - Dashboard mostraba icono diferente para transferencias que la pantalla de transacciones
+- **Ahora**: 
+  - La categoría "transferencia entre cuentas" solo es visible en pantalla de categorías (como categoría del sistema)
+  - Dashboard y pantalla de transacciones usan el mismo icono `ArrowRightLeft` para transferencias
+  - Consistencia visual total en toda la aplicación
+
+### 🔍 Cambios Específicos
+- ✅ **Formularios**: Categoría "transferencia entre cuentas" filtrada de FAB y página de nueva transacción
+- ✅ **Dashboard**: Icono `ArrowRightLeft` para transferencias con color azul consistente
+- ✅ **Pantalla de Transacciones**: Ya tenía el icono correcto, ahora es consistente con dashboard
+- ✅ **Categorías**: La categoría sigue siendo visible en pantalla de categorías (como debe ser)
+
+### 🎨 Consistencia Visual
+- **Transferencias**: Icono `ArrowRightLeft` azul en dashboard y pantalla de transacciones
+- **Otras Categorías**: Iconos específicos de cada categoría usando `getCategoryIcon`
+- **Filtrado**: Solo categorías editables por el usuario aparecen en formularios
+
+## [0.3.10] - 18-01-2025
+
+### 🐛 Corregido
+- **FAB Desapareciendo**: Corregido problema donde el FAB desaparecía después de actualizar datos desde cualquier modal de formulario
+- **Modal de Edición de Transacciones**: Agregado `setIsFormOpen(false)` faltante en `handleEditTransaction`
+- **FAB Context**: Integrado `useFabContext` en el componente `FloatingActionButton` para restaurar correctamente el estado del FAB
+
+### 🔧 Técnico
+- **Navigation.tsx**: 
+  - Agregado `useFabContext` import y hook
+  - Agregado `setIsFormOpen(false)` a todos los handlers de creación (`handleCreateTransaction`, `handleCreateAccount`, `handleCreateCategory`, `handleCreateTransfer`)
+  - Agregado `setIsFormOpen(false)` a todos los handlers de cierre (`onClose`, `onCancel`) de todos los modales
+- **Transactions Page**: Agregado `setIsFormOpen(false)` a `handleEditTransaction`
+- **Consistencia**: Todos los modales ahora restauran correctamente el estado del FAB
+
+### 🎯 Problema Resuelto
+- **Antes**: 
+  - Al actualizar datos desde modales, el FAB desaparecía y no volvía a aparecer hasta recargar la página
+  - El estado `isFormOpen` permanecía en `true`, ocultando el FAB globalmente
+  - Solo algunos modales tenían `setIsFormOpen(false)`
+- **Ahora**: 
+  - Todos los modales restauran correctamente el estado del FAB
+  - El FAB permanece visible después de cualquier operación de actualización
+  - Consistencia total en el manejo del estado del FAB
+
+### 🔍 Modales Corregidos
+- ✅ **FAB Modales**: TransactionForm, AccountForm, CategoryForm, TransferForm
+- ✅ **Page Modales**: TransactionForm (edición), AccountForm (edición), CategoryForm (edición)
+- ✅ **Handlers**: Todos los `onClose` y `onCancel` ahora restauran el FAB
+- ✅ **Creación**: Todos los handlers de creación restauran el FAB
+- ✅ **Edición**: Todos los handlers de edición restauran el FAB
+
+## [0.3.9] - 18-01-2025
+
+### 🐛 Corregido
+- **Discrepancia en Cálculo de Balance**: Corregido problema donde el balance mostrado en el dashboard no coincidía con el de la pantalla de cuentas
+- **Cálculo Dinámico Incorrecto**: El dashboard estaba usando `initialBalance` como base para cálculos dinámicos en lugar del campo `balance` fijo
+- **Edición de Saldo Inicial**: Prevenido que se pueda editar el campo `initialBalance` después de crear una cuenta
+
+### 🔧 Técnico
+- **Dashboard**: Modificado para usar directamente `account.balance` en lugar de `calculateAccountBalance(account.id, account.initialBalance)`
+- **AccountForm**: Campo `initialBalance` ahora es de solo lectura cuando se edita una cuenta existente
+- **Consistencia de Datos**: Todos los cálculos de balance ahora usan el campo `balance` fijo, no cálculos dinámicos
+
+### 🎯 Problema Resuelto
+- **Antes**: 
+  - Dashboard calculaba balance dinámicamente usando `initialBalance + transacciones`
+  - Pantalla de cuentas mostraba `account.balance` directamente
+  - Al editar `initialBalance`, esto afectaba el cálculo del dashboard
+- **Ahora**: 
+  - Dashboard usa directamente `account.balance` (consistente con pantalla de cuentas)
+  - Campo `initialBalance` es de solo lectura al editar cuentas
+  - Todos los balances son consistentes en toda la aplicación
+
+### 🚫 Prevención de Errores
+- **Campo InitialBalance**: Deshabilitado en formulario de edición con mensaje explicativo
+- **Validación Visual**: Campo muestra "(no editable)" en el label cuando se está editando
+- **Consistencia**: Eliminada la función `calculateAccountBalance` no utilizada del dashboard
+
+## [0.3.8] - 18-01-2025
+
+### 🐛 Corregido
+- **Campo Monto Inicial en Edición de Cuentas**: Corregido problema donde al editar una cuenta, el campo "Monto inicial" mostraba el balance actual en lugar del monto inicial original
+- **Preservación del Balance**: El balance actual de la cuenta ya no se sobrescribe al editar la cuenta
+
+### 🔧 Técnico
+- **handleEditAccount**: Modificado para excluir el campo `balance` al actualizar cuentas existentes
+- **Preservación de Datos**: Solo se actualizan los campos editables (name, type, color, initialBalance) sin afectar el balance actual
+
+### 🎯 Problema Resuelto
+- **Antes**: Al editar una cuenta, el balance actual se sobrescribía con el monto inicial, perdiendo el historial de transacciones
+- **Ahora**: Al editar una cuenta, el balance actual se preserva y solo se actualizan los campos editables
+- **Resultado**: El balance de la cuenta mantiene su valor correcto después de editar, sin necesidad de crear nuevas transacciones
+
+## [0.3.7] - 18-01-2025
+
+### 🐛 Corregido
+- **Modal de Edición de Transacciones**: Corregido problema donde el modal no se cerraba después de editar una transacción
+- **Consistencia de Modales**: Todos los modales de formularios ahora se cierran correctamente después de operaciones exitosas
+
+### 🔧 Técnico
+- **handleEditTransaction**: Agregado `setIsModalOpen(false)` para cerrar el modal después de editar
+- **Verificación Completa**: Confirmado que todos los demás formularios ya cerraban correctamente sus modales
+
+### 🎯 Problema Resuelto
+- **Antes**: Modal de edición de transacciones permanecía abierto después de guardar cambios
+- **Ahora**: Modal se cierra automáticamente después de editar exitosamente
+- **Resultado**: Experiencia de usuario mejorada con comportamiento consistente en todos los modales
+
+## [0.3.6] - 18-01-2025
+
+### 🔄 Refactorización Mayor
+- **Sistema de Balance Completamente Rediseñado**: Cambio fundamental en la lógica de balance de cuentas
+- **Campo Balance Mutable**: Implementado campo `balance` que se actualiza directamente con cada transacción/transferencia
+- **Eliminación de Cálculo Dinámico**: Removido el cálculo dinámico de balance basado en transacciones
+- **Migración Automática**: Sistema de migración para actualizar cuentas existentes al nuevo modelo
+
+### 🐛 Corregido
+- **Balance Inconsistente**: Resuelto problema de discrepancia entre balance mostrado y balance usado en transferencias
+- **Campo originalInitialBalance**: Eliminado campo innecesario que causaba confusión
+- **Cálculo Incorrecto**: Balance ahora se mantiene consistente entre todas las pantallas
+- **Edición de Transacciones**: Balance ahora se actualiza correctamente al editar transacciones
+- **Eliminación de Transacciones**: Balance ahora se actualiza correctamente al eliminar transacciones
+- **Eliminación de Transferencias**: Balance ahora se actualiza correctamente al eliminar transferencias
+
+### 🔧 Técnico
+- **Account Interface**: Agregado campo `balance: number` requerido
+- **createAccount**: Inicializa `balance` con `initialBalance`
+- **createTransaction**: Actualiza `balance` directamente después de crear transacción
+- **updateTransaction**: Actualiza `balance` después de editar transacción
+- **deleteTransaction**: Actualiza `balance` después de eliminar transacción
+- **createTransfer**: Actualiza `balance` de ambas cuentas directamente
+- **deleteTransfer**: Elimina transacciones asociadas y actualiza balances de ambas cuentas
+- **updateAccountBalance**: Nueva función para recalcular balance basado en transacciones
+- **migrateAccountsToNewBalanceSystem**: Migración automática para cuentas existentes
+- **Pantalla de Cuentas**: Muestra `account.balance` directamente en lugar de cálculo dinámico
+
+### 🎯 Problema Resuelto
+- **Antes**: Balance calculado dinámicamente → inconsistencia entre pantallas
+- **Ahora**: Balance actualizado directamente → consistencia total
+- **Resultado**: Balance de transferencias coincide exactamente con balance mostrado en pantalla de cuentas
+
+## [0.3.5] - 18-01-2025
+
+### 🐛 Corregido
+- **Cálculo de Balance Crítico**: Corregido problema fundamental en cálculo de balance de transferencias
+- **Saldo Inicial Original**: Implementado campo `originalInitialBalance` para mantener referencia original
+- **Migración de Datos**: Agregada migración automática para cuentas existentes
+- **Consistencia de Datos**: Balance ahora se calcula correctamente usando saldo inicial original
+
+### 🔧 Técnico
+- **Account Interface**: Agregado campo `originalInitialBalance` opcional
+- **createAccount**: Ahora guarda `originalInitialBalance` al crear cuentas
+- **migrateAccounts**: Función de migración para cuentas existentes
+- **createTransfer**: Usa `originalInitialBalance` para cálculo correcto
+- **Logs de Debug**: Mejorados para diagnosticar problemas de balance
+
+### 🎯 Problema Resuelto
+- **Antes**: Transferencias usaban `initialBalance` modificado → cálculo incorrecto
+- **Ahora**: Transferencias usan `originalInitialBalance` → cálculo correcto
+- **Resultado**: Balance de transferencias coincide con balance mostrado en pantalla de cuentas
+
+## [0.3.4] - 18-01-2025
+
+### 🐛 Corregido
+- **Cálculo de Balance**: Corregido cálculo incorrecto de balance en transferencias
+- **Saldo Inicial**: Mantenido saldo inicial original de cuentas sin modificar por transferencias
+- **Balance Dinámico**: Balance ahora se calcula correctamente desde saldo inicial + transacciones
+
+### 🔧 Técnico
+- **createTransfer**: Creada función `calculateAccountBalance` para cálculo correcto
+- **initialBalance**: Ya no se modifica por transferencias, se mantiene como referencia original
+- **Transacciones**: Las transferencias se reflejan solo en las transacciones, no en initialBalance
+- **Logs de Debug**: Mejorados logs para diagnosticar problemas de balance
+
+## [0.3.3] - 18-01-2025
+
+### 🐛 Corregido
+- **Transferencias**: Corregido cálculo incorrecto de saldo en transferencias
+- **Mensajes de Error**: Mejorados mensajes de error para mostrar información específica al usuario
+- **Validación de Saldo**: Agregados logs de debug para diagnosticar problemas de saldo
+
+### 🔧 Técnico
+- **createTransfer**: Mejorado cálculo de balance con logs detallados
+- **TransferForm**: Mejorado manejo de errores para mostrar mensajes específicos
+- **Mensajes de Error**: Ahora muestran saldo disponible vs monto solicitado
+
+## [0.3.2] - 18-01-2025
+
+### 🐛 Corregido
+- **Formulario de Transferencias**: Corregido error de validación de formato en campo de monto
+- **Input Pattern**: Eliminado atributo `pattern="[0-9]*"` que causaba conflicto con formato CLP
+- **Validación HTML5**: Mejorada compatibilidad entre formato CLP y validación del navegador
+
+### 🔧 Técnico
+- **TransferForm**: Removido `pattern` que impedía mostrar formato "$5.000"
+- **Input Mode**: Mantenido `inputMode="numeric"` para teclado numérico en móviles
+- **Formato CLP**: Ahora funciona correctamente sin conflictos de validación
+
 ## [0.3.1] - 18-01-2025
 
 ### 🐛 Corregido

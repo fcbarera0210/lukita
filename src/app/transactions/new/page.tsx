@@ -53,7 +53,11 @@ function NewTransactionPageContent() {
         ]);
 
         setAccounts(accountsData);
-        setCategories(categoriesData);
+        // Filtrar la categoría de transferencias (solo para el sistema)
+        const filteredCategories = categoriesData.filter(category => 
+          category.name !== 'transferencia entre cuentas'
+        );
+        setCategories(filteredCategories);
       } catch (error) {
         showToast({
           type: 'error',

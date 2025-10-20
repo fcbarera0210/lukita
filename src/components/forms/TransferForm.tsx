@@ -56,10 +56,11 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
         description: 'La transferencia se ha realizado exitosamente',
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'No se pudo realizar la transferencia';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo realizar la transferencia',
+        title: 'Error en la transferencia',
+        description: errorMessage,
       });
       throw error;
     } finally {
@@ -115,7 +116,6 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
         <Input
           type="text" // Usar text para permitir formato CLP
           inputMode="numeric"
-          pattern="[0-9]*"
           {...register('amount', {
             setValueAs: (value) => parseCLP(value),
           })}

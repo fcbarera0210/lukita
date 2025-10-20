@@ -91,7 +91,10 @@ export function AccountForm({ account, existingAccounts = [], onSubmit, onCancel
 
     setIsLoading(true);
     try {
-      await onSubmit(data);
+      await onSubmit({
+        ...data,
+        balance: data.initialBalance // Inicializar balance con el saldo inicial
+      });
       showToast({
         type: 'success',
         title: account ? 'Cuenta actualizada' : 'Cuenta creada',
@@ -163,7 +166,7 @@ export function AccountForm({ account, existingAccounts = [], onSubmit, onCancel
 
       <div>
         <label htmlFor="initialBalance" className="block text-sm font-medium mb-2">
-          Saldo inicial (opcional)
+          Saldo inicial {account ? '(no editable)' : '(opcional)'}
         </label>
         <Input
           id="initialBalance"
@@ -171,7 +174,14 @@ export function AccountForm({ account, existingAccounts = [], onSubmit, onCancel
           placeholder="0"
           value={initialBalance ? formatCLP(initialBalance) : ''}
           onChange={handleInitialBalanceChange}
+          disabled={!!account} // Deshabilitar si se está editando
+          className={account ? 'bg-muted cursor-not-allowed' : ''}
         />
+        {account && (
+          <p className="text-xs text-muted-foreground mt-1">
+            El saldo inicial no se puede modificar después de crear la cuenta
+          </p>
+        )}
         {errors.initialBalance && (
           <p className="text-sm text-destructive mt-1">{errors.initialBalance.message}</p>
         )}
