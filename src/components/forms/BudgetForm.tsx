@@ -21,7 +21,7 @@ export function BudgetForm({ initial, categories, onSubmit, onCancel }: BudgetFo
         if (!categoryId || defaultAmount <= 0) return;
         setSubmitting(true);
         try {
-          await onSubmit({ categoryId, defaultAmount } as any);
+          await onSubmit({ categoryId, defaultAmount });
         } finally {
           setSubmitting(false);
         }

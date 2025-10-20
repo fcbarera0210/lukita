@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft, Home, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { getAccounts, getTransactions, getTransactionsByDateRange, getCategories, getTrendData, TrendData, getMonthlyComparisonData, MonthlyComparisonData, getTopCategories, TopCategoryData } from '@/lib/firestore';
-import { getBudgets, monthKeyFromDate, getMonthlyCategorySpending, calculateBudgetProgress, getBudgetsForMonth } from '@/lib/budgets';
+import { getAccounts, getTransactions, getCategories, getTrendData, TrendData, getMonthlyComparisonData, MonthlyComparisonData, getTopCategories, TopCategoryData } from '@/lib/firestore';
+import { getBudgetsForMonth, monthKeyFromDate } from '@/lib/budgets';
 import { BudgetCard } from '@/components/BudgetCard';
 import { getUpcomingOccurrences, getRecurring } from '@/lib/recurring';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import type { CategoryBudget } from '@/types/budget';
 import { Account } from '@/types/account';
 import { Transaction } from '@/types/transaction';
 import { Category } from '@/types/category';
 import { formatCLP } from '@/lib/clp';
-import { formatDate, getPeriodFromCutoff } from '@/lib/dates';
+import { formatDate } from '@/lib/dates';
 import { Button } from '@/components/ui/Button';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { getAccountColorClass } from '@/lib/account-colors';
@@ -40,7 +41,7 @@ export default function DashboardPage() {
   const [comparisonData, setComparisonData] = useState<MonthlyComparisonData | null>(null);
   const [topCategoriesData, setTopCategoriesData] = useState<TopCategoryData[]>([]);
   const [budgetSummary, setBudgetSummary] = useState<{ total: number; used: number; percentage: number } | null>(null);
-  const [budgetList, setBudgetList] = useState<any[]>([]);
+  const [budgetList, setBudgetList] = useState<(CategoryBudget & { effectiveAmount: number; spentAmount: number })[]>([]);
   const [upcoming, setUpcoming] = useState<{ note: string; date: Date }[]>([]);
   const [isBudgetsExpanded, setIsBudgetsExpanded] = useState(true);
   const [isRecurringExpanded, setIsRecurringExpanded] = useState(true);
@@ -126,11 +127,11 @@ export default function DashboardPage() {
       orderBy('createdAt', 'desc')
     );
     
-    const unsubscribeBudgets = onSnapshot(budgetsQuery, async (snapshot) => {
-      const budgets = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as any[];
+        const unsubscribeBudgets = onSnapshot(budgetsQuery, async (snapshot) => {
+          const budgets = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as CategoryBudget[];
       
       const budgetMonthKey = monthKeyFromDate(selectedMonth);
       const budgetsForMonth = await getBudgetsForMonth(user.uid, budgetMonthKey);

@@ -68,14 +68,13 @@ export function BudgetCard({ budget, month, onUpdate }: BudgetCardProps) {
         <div className="flex justify-between">
           <span className="text-muted-foreground">Límite:</span>
           {month && onUpdate ? (
-            <MonthlyBudgetAdjustment
-              budgetId={budget.id}
-              categoryId={budget.categoryId}
-              defaultAmount={budget.defaultAmount}
-              month={month}
-              currentAmount={budget.effectiveAmount}
-              onUpdate={onUpdate}
-            />
+              <MonthlyBudgetAdjustment
+                budgetId={budget.id}
+                defaultAmount={budget.defaultAmount}
+                month={month}
+                currentAmount={budget.effectiveAmount}
+                onUpdate={onUpdate}
+              />
           ) : (
             <span className="font-medium">${(budget.effectiveAmount || budget.defaultAmount || 0).toLocaleString('es-CL')}</span>
           )}

@@ -49,7 +49,7 @@ export function RecurringForm({ initial, accounts, categories, onSubmit, onCance
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <label className="text-sm">Tipo</label>
-          <select value={type} onChange={(e) => setType(e.target.value as any)} className="w-full border rounded px-3 py-2 bg-background">
+          <select value={type} onChange={(e) => setType(e.target.value as RecurringTransaction['type'])} className="w-full border rounded px-3 py-2 bg-background">
             <option value="gasto">Gasto</option>
             <option value="ingreso">Ingreso</option>
           </select>

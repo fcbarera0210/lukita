@@ -1,11 +1,12 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { getBudgets, createBudget, updateBudget, deleteBudget, getBudgetsForMonth, monthKeyFromDate } from '@/lib/budgets';
+import { createBudget, updateBudget, deleteBudget, getBudgetsForMonth, monthKeyFromDate } from '@/lib/budgets';
 import { BudgetCard } from '@/components/BudgetCard';
 import { useAuth } from '@/lib/auth';
 import { Modal } from '@/components/ui/Modal';
 import { BudgetForm } from '@/components/forms/BudgetForm';
 import { getCategories } from '@/lib/firestore';
+import type { CategoryBudget } from '@/types/budget';
 import type { Category } from '@/types/category';
 import { db } from '@/lib/firebase';
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
@@ -18,10 +19,10 @@ export default function BudgetsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const month = monthKeyFromDate(new Date());
-  const [budgets, setBudgets] = useState<any[]>([]);
+  const [budgets, setBudgets] = useState<(CategoryBudget & { effectiveAmount: number; spentAmount: number })[]>([]);
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editing, setEditing] = useState<(CategoryBudget & { effectiveAmount: number; spentAmount: number }) | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
@@ -158,7 +159,7 @@ export default function BudgetsPage() {
                 onSubmit={async (data) => {
                   if (!user) return;
                   try {
-                    await createBudget(user.uid, data as any);
+                    await createBudget(user.uid, data);
                     const updated = await getBudgetsForMonth(user.uid, month);
                     setBudgets(updated);
                     setOpen(false);
@@ -187,7 +188,7 @@ export default function BudgetsPage() {
                 onSubmit={async (data) => {
                   if (!user) return;
                   try {
-                    await updateBudget(user.uid, editing.id, data as any);
+                    await updateBudget(user.uid, editing.id, data);
                     const updated = await getBudgetsForMonth(user.uid, month);
                     setBudgets(updated);
                     setEditing(null);

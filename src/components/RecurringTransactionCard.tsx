@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { RecurringTransaction } from '@/types/recurring';
+import type { AccountColorId } from '@/lib/account-colors';
 import { getUpcomingOccurrences, updateRecurring } from '@/lib/recurring';
 import { useAuth } from '@/lib/auth';
 import { getAccountColorClass, getAccountBackgroundClass } from '@/lib/account-colors';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 
 interface RecurringTransactionCardProps {
-  item: RecurringTransaction;
+  item: RecurringTransaction & { categoryId: string };
   accountColor?: string;
 }
 
@@ -23,8 +24,8 @@ export function RecurringTransactionCard({ item, accountColor }: RecurringTransa
     setLocal(item);
   }, [item]);
 
-  const colorClass = accountColor ? getAccountColorClass(accountColor as any) : 'border-border';
-  const bgClass = accountColor ? getAccountBackgroundClass(accountColor as any) : 'bg-card';
+  const colorClass = accountColor ? getAccountColorClass(accountColor as AccountColorId) : 'border-border';
+  const bgClass = accountColor ? getAccountBackgroundClass(accountColor as AccountColorId) : 'bg-card';
   
   return (
     <div className={`rounded-lg border-2 p-4 ${colorClass} ${bgClass}`}>

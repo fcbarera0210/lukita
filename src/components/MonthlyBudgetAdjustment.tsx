@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { createMonthlyAdjustment, updateMonthlyAdjustment, getMonthlyAdjustments, deleteMonthlyAdjustment } from '@/lib/budgets';
 import { useAuth } from '@/lib/auth';
-import { formatCLP } from '@/lib/clp';
-import { Pencil, Save, XCircle } from 'lucide-react';
+import { Save, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 interface MonthlyBudgetAdjustmentProps {
   budgetId: string;
-  categoryId: string;
   defaultAmount: number;
   month: string;
   currentAmount?: number;
@@ -17,7 +15,6 @@ interface MonthlyBudgetAdjustmentProps {
 
 export function MonthlyBudgetAdjustment({ 
   budgetId, 
-  categoryId, 
   defaultAmount, 
   month,
   currentAmount,

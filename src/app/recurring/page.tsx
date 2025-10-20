@@ -6,11 +6,12 @@ import { useAuth } from '@/lib/auth';
 import { Modal } from '@/components/ui/Modal';
 import { RecurringForm } from '@/components/forms/RecurringForm';
 import { getAccounts, getCategories } from '@/lib/firestore';
+import type { RecurringTransaction } from '@/types/recurring';
 import type { Account } from '@/types/account';
 import type { Category } from '@/types/category';
 import { db } from '@/lib/firebase';
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
-import { CalendarClock, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { CalendarClock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { PageDescription } from '@/components/PageDescription';
 import { useToast } from '@/components/ui/Toast';
@@ -18,18 +19,18 @@ import { useToast } from '@/components/ui/Toast';
 export default function RecurringPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<RecurringTransaction[]>([]);
   const [open, setOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [editing, setEditing] = useState<RecurringTransaction | null>(null);
+  const [isExpanded] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'users', user.uid, 'recurring'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<RecurringTransaction, 'id'>) }));
       const unique = Array.from(new Map(list.map(i => [i.id, i])).values());
       setItems(unique);
     }, console.error);
@@ -88,7 +89,7 @@ export default function RecurringPage() {
             const display = { ...item, categoryId: catName };
             return (
               <div key={item.id} className="space-y-2">
-                <RecurringTransactionCard item={display as any} accountColor={account?.color} />
+                <RecurringTransactionCard item={display} accountColor={account?.color} />
                 <div className="flex items-center justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => setEditing(item)} className="text-xs">
                     Editar
@@ -133,7 +134,7 @@ export default function RecurringPage() {
             onSubmit={async (data) => {
               if (!user) return;
               try {
-                await createRecurring(user.uid, data as any);
+                await createRecurring(user.uid, data);
                 const updated = await getRecurring(user.uid);
                 const unique = Array.from(new Map(updated.map(i => [i.id, i])).values());
                 setItems(unique);
@@ -164,7 +165,7 @@ export default function RecurringPage() {
             onSubmit={async (data) => {
               if (!user) return;
               try {
-                await updateRecurring(user.uid, editing.id, data as any);
+                await updateRecurring(user.uid, editing.id, data);
                 const updated = await getRecurring(user.uid);
                 const unique = Array.from(new Map(updated.map(i => [i.id, i])).values());
                 setItems(unique);
