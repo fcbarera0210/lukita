@@ -12,7 +12,9 @@ import {
   Settings,
   Plus,
   ArrowRightLeft,
-  TrendingUp
+  TrendingUp,
+  PieChart,
+  CalendarClock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -55,6 +57,16 @@ const navigationItems = [
     name: 'Tendencias',
     href: '/trends',
     icon: TrendingUp,
+  },
+  {
+    name: 'Presupuestos',
+    href: '/budgets',
+    icon: PieChart,
+  },
+  {
+    name: 'Recurrentes',
+    href: '/recurring',
+    icon: CalendarClock,
   },
   {
     name: 'Ajustes',

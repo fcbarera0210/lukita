@@ -87,6 +87,21 @@ export const getAccountColorClass = (colorId: AccountColorId): string => {
   return color ? color.class : 'border-border';
 };
 
+export const getAccountBackgroundClass = (colorId: AccountColorId): string => {
+  const colorMap: Record<AccountColorId, string> = {
+    blue: 'bg-blue-50 dark:bg-blue-950',
+    green: 'bg-green-50 dark:bg-green-950',
+    red: 'bg-red-50 dark:bg-red-950',
+    yellow: 'bg-yellow-50 dark:bg-yellow-950',
+    purple: 'bg-purple-50 dark:bg-purple-950',
+    pink: 'bg-pink-50 dark:bg-pink-950',
+    cyan: 'bg-cyan-50 dark:bg-cyan-950',
+    orange: 'bg-orange-50 dark:bg-orange-950'
+  };
+  
+  return colorMap[colorId] || 'bg-card';
+};
+
 export const getAccountColorValue = (colorId: AccountColorId): string => {
   const color = getColorById(colorId);
   return color ? color.value : '#6B7280'; // Default fallback (gray-500)

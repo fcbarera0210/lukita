@@ -15,6 +15,16 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
+### 🆕 Novedades v0.4.4
+- **💰 Presupuestos por Categoría**: Sistema completo de presupuestos mensuales con ajustes por mes
+- **🔄 Transacciones Recurrentes**: Automatización de transacciones regulares con pausa/reanudación
+- **📊 Dashboard Mejorado**: Integración de presupuestos y recurrentes en tiempo real
+- **🎯 Ajustes Mensuales**: Modificación de presupuestos por mes específico desde el dashboard
+- **🔔 Sistema de Toasts**: Notificaciones visuales para todas las operaciones CRUD
+- **🎨 Iconos de Categorías**: Visualización correcta de iconos en presupuestos y recurrentes
+- **⚡ Actualizaciones en Tiempo Real**: Listeners de Firestore para datos siempre actualizados
+- **🎨 Diseño Consistente**: Alineación visual con páginas existentes (categorías, cuentas)
+
 ### 🆕 Novedades v0.4.3
 - **🔍 Búsqueda Avanzada**: Sistema completo de filtros con múltiples criterios
 - **💾 Vistas Guardadas**: Guarda y carga configuraciones de filtros personalizadas
@@ -110,8 +120,43 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
+    match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Cuentas del usuario
+      match /accounts/{accountId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Categorías del usuario
+      match /categories/{categoryId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Transacciones del usuario
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Transferencias del usuario
+      match /transfers/{transferId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Presupuestos por categoría (v0.4.4+)
+      match /budgets/{budgetId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Ajustes mensuales de presupuestos (v0.4.4+)
+      match /budgetAdjustments/{adjustmentId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Transacciones recurrentes (v0.4.4+)
+      match /recurring/{recurringId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }
@@ -141,6 +186,7 @@ users/{userId}/
 │   ├── name: string
 │   ├── type: "efectivo" | "cuenta_corriente" | "tarjeta" | "ahorro" | "otro"
 │   ├── initialBalance?: number
+│   ├── color?: string
 │   └── createdAt: number
 ├── categories/{categoryId}
 │   ├── name: string
@@ -154,6 +200,24 @@ users/{userId}/
 │   ├── accountId: string
 │   ├── categoryId: string
 │   ├── note?: string
+│   └── createdAt: number
+├── budgets/{budgetId} (v0.4.4+)
+│   ├── categoryId: string
+│   ├── defaultAmount: number
+│   └── createdAt: number
+├── budgetAdjustments/{adjustmentId} (v0.4.4+)
+│   ├── budgetId: string
+│   ├── month: string (MM-YYYY)
+│   ├── adjustedAmount: number
+│   └── createdAt: number
+├── recurring/{recurringId} (v0.4.4+)
+│   ├── type: "ingreso" | "gasto"
+│   ├── amount: number
+│   ├── accountId: string
+│   ├── categoryId: string
+│   ├── note?: string
+│   ├── recurrence: "mensual" | "quincenal" | "semanal"
+│   ├── isPaused: boolean
 │   └── createdAt: number
 └── (user document)
     ├── displayName?: string

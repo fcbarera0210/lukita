@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft, Home, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, getTransactions, getTransactionsByDateRange, getCategories, getTrendData, TrendData, getMonthlyComparisonData, MonthlyComparisonData, getTopCategories, TopCategoryData } from '@/lib/firestore';
+import { getBudgets, monthKeyFromDate, getMonthlyCategorySpending, calculateBudgetProgress, getBudgetsForMonth } from '@/lib/budgets';
+import { BudgetCard } from '@/components/BudgetCard';
+import { getUpcomingOccurrences, getRecurring } from '@/lib/recurring';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { Account } from '@/types/account';
 import { Transaction } from '@/types/transaction';
 import { Category } from '@/types/category';
@@ -34,6 +39,11 @@ export default function DashboardPage() {
   const [trendData, setTrendData] = useState<TrendData[]>([]);
   const [comparisonData, setComparisonData] = useState<MonthlyComparisonData | null>(null);
   const [topCategoriesData, setTopCategoriesData] = useState<TopCategoryData[]>([]);
+  const [budgetSummary, setBudgetSummary] = useState<{ total: number; used: number; percentage: number } | null>(null);
+  const [budgetList, setBudgetList] = useState<any[]>([]);
+  const [upcoming, setUpcoming] = useState<{ note: string; date: Date }[]>([]);
+  const [isBudgetsExpanded, setIsBudgetsExpanded] = useState(true);
+  const [isRecurringExpanded, setIsRecurringExpanded] = useState(true);
   const [monthlyData, setMonthlyData] = useState<{
     income: number;
     expenses: number;
@@ -68,6 +78,31 @@ export default function DashboardPage() {
         setTrendData(trendDataResult);
         setComparisonData(comparisonDataResult);
         setTopCategoriesData(topCategoriesResult);
+        // Presupuestos del mes
+        const budgetMonth = monthKeyFromDate(selectedMonth);
+        // Usar nueva lógica de presupuestos
+        const budgetsForMonth = await getBudgetsForMonth(user.uid, budgetMonth);
+        const total = budgetsForMonth.reduce((s, b) => s + b.effectiveAmount, 0);
+        const used = budgetsForMonth.reduce((s, b) => s + b.spentAmount, 0);
+        const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+        setBudgetSummary({ total, used, percentage });
+        setBudgetList(budgetsForMonth);
+
+        // Próximas recurrentes reales (3 próximas fechas)
+        try {
+          const recurring = await getRecurring(user.uid);
+          const now = new Date();
+          const nexts = recurring
+            .filter(r => !r.isPaused)
+            .map(r => {
+              const occ = getUpcomingOccurrences(r, now, 1)[0];
+              return occ ? { note: r.note || r.categoryId, date: occ } : null;
+            })
+            .filter((x): x is { note: string; date: Date } => !!x)
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .slice(0, 3);
+          setUpcoming(nexts);
+        } catch {}
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -76,8 +111,119 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    if (!user) return;
+    setLoading(true);
+    loadData().finally(() => setLoading(false));
+  }, [user, selectedMonth]);
+
+  // useEffect para listeners en tiempo real
+  useEffect(() => {
+    if (!user) return;
+
+    // Listener para presupuestos
+    const budgetsQuery = query(
+      collection(db, 'users', user.uid, 'budgets'),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribeBudgets = onSnapshot(budgetsQuery, async (snapshot) => {
+      const budgets = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as any[];
+      
+      const budgetMonthKey = monthKeyFromDate(selectedMonth);
+      const budgetsForMonth = await getBudgetsForMonth(user.uid, budgetMonthKey);
+      
+      const total = budgetsForMonth.reduce((s, b) => s + b.effectiveAmount, 0);
+      const used = budgetsForMonth.reduce((s, b) => s + b.spentAmount, 0);
+      const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+      
+      setBudgetSummary({ total, used, percentage });
+      setBudgetList(budgetsForMonth);
+    });
+
+    // Listener para transacciones
+    const transactionsQuery = query(
+      collection(db, 'users', user.uid, 'transactions'),
+      orderBy('date', 'desc')
+    );
+    
+    const unsubscribeTransactions = onSnapshot(transactionsQuery, async (snapshot) => {
+      const transactions = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date)
+        };
+      }) as Transaction[];
+      
+      setAllTransactions(transactions);
+      
+      // Recalcular datos mensuales
+      const transactionMonthKey = monthKeyFromDate(selectedMonth);
+      const monthStart = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+      const monthEnd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0, 23, 59, 59);
+      
+      const monthlyTransactions = transactions.filter(t => {
+        return t.date >= monthStart.getTime() && t.date <= monthEnd.getTime();
+      });
+      
+      const income = monthlyTransactions
+        .filter(t => t.type === 'ingreso')
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      const expenses = monthlyTransactions
+        .filter(t => t.type === 'gasto')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Calcular breakdown por categoría (solo gastos)
+      const categoryBreakdown = monthlyTransactions
+        .filter(t => t.type === 'gasto')
+        .reduce((acc, transaction) => {
+          const category = categories.find(c => c.id === transaction.categoryId);
+          if (category) {
+            const existing = acc.find(item => item.categoryId === transaction.categoryId);
+            if (existing) {
+              existing.amount += transaction.amount;
+            } else {
+              acc.push({
+                categoryId: transaction.categoryId,
+                amount: transaction.amount,
+                category
+              });
+            }
+          }
+          return acc;
+        }, [] as { categoryId: string; amount: number; category: Category }[])
+        .sort((a, b) => b.amount - a.amount);
+
+      setMonthlyData({
+        income,
+        expenses,
+        transactions: monthlyTransactions,
+        categoryBreakdown
+      });
+
+      // Actualizar presupuestos con nuevos gastos
+      const updateMonthKey = monthKeyFromDate(selectedMonth);
+      const budgetsForMonth = await getBudgetsForMonth(user.uid, updateMonthKey);
+      
+      setBudgetList(budgetsForMonth);
+      
+      // Recalcular summary con los presupuestos actualizados
+      const total = budgetsForMonth.reduce((s, b) => s + b.effectiveAmount, 0);
+      const used = budgetsForMonth.reduce((s, b) => s + b.spentAmount, 0);
+      const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+      setBudgetSummary({ total, used, percentage });
+    });
+
+    return () => {
+      unsubscribeBudgets();
+      unsubscribeTransactions();
+    };
+  }, [user, selectedMonth, categories]);
 
   // Recargar tendencias cuando cambie el mes seleccionado
   useEffect(() => {
@@ -146,69 +292,6 @@ export default function DashboardPage() {
     };
   }, [user]);
 
-  // Cargar datos del mes seleccionado
-  useEffect(() => {
-    const loadMonthlyData = async () => {
-      if (!user) return;
-
-      try {
-        const [startDate, endDate] = getPeriodFromCutoff(selectedMonth, 1); // Usar selectedMonth y día 1 como corte
-        const monthlyTransactions = await getTransactionsByDateRange(
-          user.uid, 
-          startDate.getTime(), 
-          endDate.getTime()
-        );
-
-        // Cargar transacciones recientes del mes seleccionado (últimas 5)
-        const recentMonthlyTransactions = monthlyTransactions
-          .sort((a, b) => b.date - a.date)
-          .slice(0, 5);
-        setRecentTransactions(recentMonthlyTransactions);
-
-        const income = monthlyTransactions
-          .filter(t => t.type === 'ingreso')
-          .reduce((sum, t) => sum + t.amount, 0);
-        
-        const expenses = monthlyTransactions
-          .filter(t => t.type === 'gasto')
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        // Calcular breakdown por categoría (solo gastos)
-        const categoryBreakdown = monthlyTransactions
-          .filter(t => t.type === 'gasto')
-          .reduce((acc, transaction) => {
-            const category = categories.find(c => c.id === transaction.categoryId);
-            if (category) {
-              const existing = acc.find(item => item.categoryId === transaction.categoryId);
-              if (existing) {
-                existing.amount += transaction.amount;
-              } else {
-                acc.push({
-                  categoryId: transaction.categoryId,
-                  amount: transaction.amount,
-                  category
-                });
-              }
-            }
-            return acc;
-          }, [] as { categoryId: string; amount: number; category: Category }[])
-          .sort((a, b) => b.amount - a.amount);
-
-        setMonthlyData({
-          income,
-          expenses,
-          transactions: monthlyTransactions,
-          categoryBreakdown
-        });
-      } catch (error) {
-        console.error('Error loading monthly data:', error);
-      }
-    };
-
-    if (categories.length > 0) {
-      loadMonthlyData();
-    }
-  }, [user, selectedMonth, categories]);
 
   // Función para calcular el balance real de una cuenta
   const calculateAccountBalance = (accountId: string, initialBalance: number) => {
@@ -243,6 +326,8 @@ export default function DashboardPage() {
       year: 'numeric'
     }).format(date);
   };
+
+  const currentMonthKey = monthKeyFromDate(selectedMonth);
 
   if (loading) {
     return (
@@ -436,6 +521,92 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Presupuestos del mes - estilo consistente con headers y toggle */}
+      {budgetSummary && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Presupuestos ({currentMonthKey.split('-').reverse().join('-')})</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => setIsBudgetsExpanded(!isBudgetsExpanded)} className="flex items-center gap-2">
+                {isBudgetsExpanded ? (<><ChevronUp className="h-4 w-4" /> Ocultar</>) : (<><ChevronDown className="h-4 w-4" /> Mostrar</>)}
+              </Button>
+            </div>
+          </div>
+          {isBudgetsExpanded && (
+            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+              <div>
+                <div className="h-3 w-full rounded bg-muted">
+                  <div className={`h-3 rounded ${budgetSummary.percentage >= 100 ? 'bg-red-600' : budgetSummary.percentage >= 80 ? 'bg-amber-500' : 'bg-green-600'}`} style={{ width: `${budgetSummary.percentage}%` }} />
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Usado: {formatCLP(budgetSummary.used)} / Límite: {formatCLP(budgetSummary.total)} ({budgetSummary.percentage}%)
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {budgetList.map(b => {
+                  const category = categories.find(c => c.id === b.categoryId);
+                  const display = { 
+                    ...b, 
+                    categoryId: category?.name || b.categoryId,
+                    categoryIcon: category?.icon
+                  };
+                  return (
+                    <BudgetCard 
+                      key={b.id} 
+                      budget={display} 
+                      month={currentMonthKey}
+                      onUpdate={async () => {
+                        if (!user) return;
+                        const budgetsForMonth = await getBudgetsForMonth(user.uid, currentMonthKey);
+                        setBudgetList(budgetsForMonth);
+                        const total = budgetsForMonth.reduce((s, b) => s + b.effectiveAmount, 0);
+                        const used = budgetsForMonth.reduce((s, b) => s + b.spentAmount, 0);
+                        const percentage = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+                        setBudgetSummary({ total, used, percentage });
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Próximas recurrentes - estilo consistente con headers y toggle */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Próximas recurrentes</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setIsRecurringExpanded(!isRecurringExpanded)} className="flex items-center gap-2">
+              {isRecurringExpanded ? (<><ChevronUp className="h-4 w-4" /> Ocultar</>) : (<><ChevronDown className="h-4 w-4" /> Mostrar</>)}
+            </Button>
+          </div>
+        </div>
+        {isRecurringExpanded && (
+          <div className="bg-card border border-border rounded-lg p-6">
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay próximas recurrentes configuradas aquí. Adminístralas en la sección Recurrentes.</p>
+            ) : (
+              <ul className="text-sm">
+                {upcoming.map((u, i) => (
+                  <li key={i} className="flex items-center justify-between py-1">
+                    <span>{u.note}</span>
+                    <span>{formatDate(u.date)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Comparación Mensual */}

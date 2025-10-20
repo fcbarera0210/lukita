@@ -288,8 +288,6 @@ La versión 0.4.0 de Lukita se enfoca en **análisis avanzado**, **mejoras de UX
 ### Fase 4: Gestión Avanzada (Semana 4)
 - ⏳ Presupuestos por categoría
 - ⏳ Transacciones recurrentes
-- ⏳ Comparación mensual
-- ⏳ Top categorías
 
 ### Fase 5: Revisión de Tendencias (Semana 5)
 - ⏳ Mejoras en visualización de tendencias
