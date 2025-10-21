@@ -16,7 +16,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     // Solo ejecutar redirección cuando el loading termine y no haya usuario
     if (!loading && !user) {
       // Redirigir al login si no hay sesión activa
-      router.push('/(auth)/login');
+      router.push('/login');
     }
   }, [user, loading, router]);
 

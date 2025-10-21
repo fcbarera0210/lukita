@@ -26,7 +26,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   
   // Rutas que no deben mostrar navegación
-  const authRoutes = ['/(auth)/login', '/(auth)/register'];
+  const authRoutes = ['/login', '/register'];
   const isAuthRoute = authRoutes.includes(pathname);
   
   // Rutas que no deben mostrar FAB

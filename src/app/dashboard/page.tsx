@@ -368,7 +368,7 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-1">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-foreground">
               {welcomeMessage.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
             </span>
             <span>

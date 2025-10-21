@@ -352,7 +352,7 @@ export default function SettingsPage() {
 
         {/* Información de la App */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>Lukita v0.4.3</p>
+          <p>Lukita v0.4.5</p>
           <p>PWA de finanzas personales</p>
         </div>
 
