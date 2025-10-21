@@ -15,6 +15,34 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Filtros Avanzados**: Búsqueda y filtrado de transacciones
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
+### 🆕 Novedades v0.4.6 - Fase 5: Mejoras Visuales y UX Completadas ✨
+- **🎨 Dashboard Renovado**: Mensajes de bienvenida aleatorios con gradiente azul-púrpura
+- **💡 Frase Motivadora**: Integración con Advice Slip API con traducción automática al español
+- **🌐 Traducción Inteligente**: Botón para alternar entre español e inglés en las frases motivadoras
+- **🎭 Gradientes Universales**: Aplicados a todas las cards (presupuestos, transacciones, cuentas, recurrentes)
+- **🎯 Consistencia Visual**: Paleta de colores unificada en toda la aplicación
+- **📱 Navegación Móvil**: Rediseño completo con mejor organización de íconos
+- **👁️ Textos Informativos**: Colapsibles por defecto para mejor experiencia de usuario
+- **🎨 Fondos Temáticos**: Cards con colores de cuenta aplicados consistentemente
+- **🔧 Micro-interacciones**: Botones con efectos hover y transiciones suaves
+- **⚡ Skeleton Loaders**: Estados de carga elegantes y consistentes
+- **🌙 Transiciones de Tema**: Cambios suaves entre modo claro y oscuro
+- **🎪 Animaciones**: Efectos sutiles en hover y transiciones de estado
+
+### 🆕 Novedades v0.4.5
+- **📱 Navegación Móvil Mejorada**: Rediseño de barra de navegación con agrupación inteligente
+- **👁️ Íconos Unificados**: Cambio de ChevronDown/ChevronUp a Eye/EyeOff para consistencia visual
+- **🎯 Acceso Rápido**: Solo 5 elementos principales en la barra de navegación móvil
+- **📋 Menú "Más"**: Funciones secundarias organizadas en menú desplegable
+- **🎨 UX Consistente**: Experiencia visual unificada en todas las pantallas
+- **⚡ Optimización de Espacio**: Mejor aprovechamiento del espacio en pantallas pequeñas
+- **✨ Animaciones Suaves**: Transiciones fluidas en navegación y micro-interacciones
+- **🎭 Hover Effects**: Efectos visuales mejorados en cards y elementos interactivos
+- **🌈 Transiciones de Tema**: Cambios suaves entre tema claro y oscuro
+- **💫 Micro-interacciones**: Feedback táctil mejorado en botones y elementos
+- **🎪 Sombras Sutiles**: Cards con sombras elegantes y efectos de profundidad
+- **⚡ Skeleton Loaders**: Indicadores de carga más elegantes y fluidos
+
 ### 🆕 Novedades v0.4.4
 - **💰 Presupuestos por Categoría**: Sistema completo de presupuestos mensuales con ajustes por mes
 - **🔄 Transacciones Recurrentes**: Automatización de transacciones regulares con pausa/reanudación

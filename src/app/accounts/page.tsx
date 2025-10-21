@@ -13,9 +13,9 @@ import { AccountForm } from '@/components/forms/AccountForm';
 import { useToast } from '@/components/ui/Toast';
 import { formatCLP } from '@/lib/clp';
 import { useFabContext } from '@/components/ConditionalLayout';
-import { MAX_ACCOUNTS, getAccountColorClass } from '@/lib/account-colors';
+import { MAX_ACCOUNTS, getAccountColorClass, getAccountBackgroundClass, getAccountTextClass } from '@/lib/account-colors';
 import { addCustomEventListener, CUSTOM_EVENTS, dispatchCustomEvent } from '@/lib/custom-events';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 
 function AccountsPageContent() {
   const { user } = useAuth();
@@ -222,7 +222,7 @@ function AccountsPageContent() {
       </div>
 
       {/* Page Description */}
-      <PageDescription
+      <CollapsibleDescription
         title="Gestión de Cuentas"
         description="Gestiona todas tus cuentas bancarias y de efectivo. Crea hasta 8 cuentas con colores únicos para fácil identificación. Cada cuenta muestra su balance actual que se actualiza automáticamente con cada transacción. Las transferencias entre cuentas se reflejan aquí."
         icon={<Building2 className="h-5 w-5 text-primary" />}
@@ -250,16 +250,16 @@ function AccountsPageContent() {
             return (
               <div
                 key={account.id}
-                className={`bg-card border-2 ${getAccountColorClass(account.color)} rounded-lg p-4`}
+                className={`border-2 ${getAccountColorClass(account.color)} ${getAccountBackgroundClass(account.color)} rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02]`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="font-medium">{account.name}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">
+                    <h3 className={`font-medium ${getAccountTextClass(account.color)}`}>{account.name}</h3>
+                    <p className={`text-sm ${getAccountTextClass(account.color)} opacity-70 capitalize`}>
                       {account.type.replace('_', ' ')}
                     </p>
                     {account.initialBalance !== undefined && (
-                      <p className="text-lg font-semibold text-primary mt-1">
+                      <p className={`text-lg font-semibold text-primary mt-1`}>
                         {formatCLP(account.balance || 0)}
                       </p>
                     )}
@@ -267,14 +267,24 @@ function AccountsPageContent() {
 
                   {/* Menu button */}
                   <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={() => toggleMenu(account.id)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 rounded-md hover:bg-white/20 flex items-center justify-center"
                     >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                      <MoreVertical 
+                        className="h-4 w-4" 
+                        style={{ 
+                          color: getAccountTextClass(account.color).includes('blue') ? '#1e40af' : 
+                                 getAccountTextClass(account.color).includes('green') ? '#166534' :
+                                 getAccountTextClass(account.color).includes('red') ? '#991b1b' :
+                                 getAccountTextClass(account.color).includes('yellow') ? '#a16207' :
+                                 getAccountTextClass(account.color).includes('purple') ? '#6b21a8' :
+                                 getAccountTextClass(account.color).includes('pink') ? '#be185d' :
+                                 getAccountTextClass(account.color).includes('cyan') ? '#155e75' :
+                                 getAccountTextClass(account.color).includes('orange') ? '#c2410c' : '#000000'
+                        }}
+                      />
+                    </button>
 
                     {/* Dropdown menu */}
                     {isMenuOpen && (

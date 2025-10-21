@@ -12,7 +12,7 @@ import { CategoryForm } from '@/components/forms/CategoryForm';
 import { useToast } from '@/components/ui/Toast';
 import { useFabContext } from '@/components/ConditionalLayout';
 import { ArrowRightLeft } from 'lucide-react';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 
 
@@ -167,7 +167,7 @@ function CategoriesPageContent() {
         </div>
 
         {/* Page Description */}
-        <PageDescription
+        <CollapsibleDescription
           title="Gestión de Categorías"
           description="Organiza tus gastos e ingresos con categorías personalizadas. Crea categorías con íconos únicos para clasificar tus transacciones. Personaliza nombres, íconos y tipos de categoría. La categoría 'transferencia entre cuentas' es del sistema y no se puede modificar."
           icon={<Tags className="h-5 w-5 text-primary" />}

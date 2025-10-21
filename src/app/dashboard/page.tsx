@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CreditCard, ArrowRightLeft, Home, Trophy } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Eye, EyeOff, Calendar, CreditCard, ArrowRightLeft, Home, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getAccounts, getTransactions, getCategories, getTrendData, TrendData, getMonthlyComparisonData, MonthlyComparisonData, getTopCategories, TopCategoryData } from '@/lib/firestore';
 import { getBudgetsForMonth, monthKeyFromDate } from '@/lib/budgets';
@@ -18,11 +18,12 @@ import { formatCLP } from '@/lib/clp';
 import { formatDate } from '@/lib/dates';
 import { Button } from '@/components/ui/Button';
 import { getCategoryIcon } from '@/lib/categoryIcons';
-import { getAccountColorClass } from '@/lib/account-colors';
+import { getAccountColorClass, getAccountBackgroundClass, getAccountTextClass, getAccountIconColor } from '@/lib/account-colors';
 import { HorizontalBarChart, TrendChart } from '@/components/charts';
 import { MonthlyComparison } from '@/components/MonthlyComparison';
 import { TopCategories } from '@/components/TopCategories';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
+import { MotivationalQuote } from '@/components/MotivationalQuote';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -330,6 +331,25 @@ export default function DashboardPage() {
 
   const currentMonthKey = monthKeyFromDate(selectedMonth);
 
+  // Función para generar mensaje de bienvenida aleatorio (solo una vez)
+  const [welcomeMessage] = useState(() => {
+    const messages = [
+      "¡Hola! 👋 ¿Cómo van tus finanzas hoy?",
+      "¡Buenos días! ☀️ Tiempo de revisar tu dinero",
+      "¡Hola! 💰 Vamos a hacer que tus ahorros crezcan",
+      "¡Bienvenido! 🚀 Tu futuro financiero te espera",
+      "¡Hola! 💎 Cada peso cuenta para tus metas",
+      "¡Buenos días! 🌟 Controla tu dinero, controla tu vida",
+      "¡Hola! 🎯 Tus objetivos financieros están más cerca",
+      "¡Bienvenido! 💪 La disciplina financiera es poder",
+      "¡Hola! 🌈 Construye tu libertad financiera paso a paso",
+      "¡Buenos días! 🏆 El éxito financiero comienza aquí"
+    ];
+    
+    const randomIndex = Math.floor(Math.random() * messages.length);
+    return messages[randomIndex];
+  });
+
   if (loading) {
     return (
       <div className="p-4">
@@ -345,15 +365,27 @@ export default function DashboardPage() {
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Resumen de tus finanzas
-        </p>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-1">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {welcomeMessage.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
+            </span>
+            <span>
+              {welcomeMessage.match(/[\u{1F300}-\u{1F9FF}]/gu)?.join('') || ''}
+            </span>
+          </h1>
+          <p className="text-muted-foreground">
+            Resumen de tus finanzas
+          </p>
+        </div>
+        
+        {/* Frase motivadora */}
+        <MotivationalQuote />
       </div>
 
       {/* Page Description */}
-      <PageDescription
+      <CollapsibleDescription
         title="Panel de Control Financiero"
         description="Bienvenido a tu panel de control financiero. Aquí puedes ver un resumen completo de tus finanzas: balance total, transacciones recientes, resumen mensual con gráficos por categoría, y comparaciones con meses anteriores. Usa los controles de fecha para navegar entre diferentes períodos."
         icon={<Home className="h-5 w-5 text-primary" />}
@@ -374,12 +406,12 @@ export default function DashboardPage() {
             >
               {isAccountsExpanded ? (
                 <>
-                  <ChevronUp className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4" />
                   Ocultar cuentas
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   Ver cuentas
                 </>
               )}
@@ -433,12 +465,12 @@ export default function DashboardPage() {
           >
             {isExpanded ? (
               <>
-                <ChevronUp className="h-4 w-4" />
+                <EyeOff className="h-4 w-4" />
                 Ocultar categorías
               </>
             ) : (
               <>
-                <ChevronDown className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 Ver categorías
               </>
             )}
@@ -534,7 +566,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" onClick={() => setIsBudgetsExpanded(!isBudgetsExpanded)} className="flex items-center gap-2">
-                {isBudgetsExpanded ? (<><ChevronUp className="h-4 w-4" /> Ocultar</>) : (<><ChevronDown className="h-4 w-4" /> Mostrar</>)}
+                {isBudgetsExpanded ? (<><EyeOff className="h-4 w-4" /> Ocultar</>) : (<><Eye className="h-4 w-4" /> Mostrar</>)}
               </Button>
             </div>
           </div>
@@ -544,7 +576,7 @@ export default function DashboardPage() {
                 <div className="h-3 w-full rounded bg-muted">
                   <div className={`h-3 rounded ${budgetSummary.percentage >= 100 ? 'bg-red-600' : budgetSummary.percentage >= 80 ? 'bg-amber-500' : 'bg-green-600'}`} style={{ width: `${budgetSummary.percentage}%` }} />
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-foreground">
                   Usado: {formatCLP(budgetSummary.used)} / Límite: {formatCLP(budgetSummary.total)} ({budgetSummary.percentage}%)
                 </p>
               </div>
@@ -588,7 +620,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => setIsRecurringExpanded(!isRecurringExpanded)} className="flex items-center gap-2">
-              {isRecurringExpanded ? (<><ChevronUp className="h-4 w-4" /> Ocultar</>) : (<><ChevronDown className="h-4 w-4" /> Mostrar</>)}
+              {isRecurringExpanded ? (<><EyeOff className="h-4 w-4" /> Ocultar</>) : (<><Eye className="h-4 w-4" /> Mostrar</>)}
             </Button>
           </div>
         </div>
@@ -625,12 +657,12 @@ export default function DashboardPage() {
             >
               {isComparisonExpanded ? (
                 <>
-                  <ChevronUp className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4" />
                   Ocultar comparación
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   Ver comparación
                 </>
               )}
@@ -678,12 +710,12 @@ export default function DashboardPage() {
           >
             {isTrendsExpanded ? (
               <>
-                <ChevronUp className="h-4 w-4" />
+                <EyeOff className="h-4 w-4" />
                 Ocultar tendencias
               </>
             ) : (
               <>
-                <ChevronDown className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 Ver tendencias
               </>
             )}
@@ -726,12 +758,12 @@ export default function DashboardPage() {
             >
               {isTopCategoriesExpanded ? (
                 <>
-                  <ChevronUp className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4" />
                   Ocultar ranking
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   Ver ranking
                 </>
               )}
@@ -777,44 +809,42 @@ export default function DashboardPage() {
             {recentTransactions.map((transaction) => {
               const account = accounts.find(acc => acc.id === transaction.accountId);
               const accountColorClass = account ? getAccountColorClass(account.color) : 'border-border';
+              const accountBgClass = account ? getAccountBackgroundClass(account.color) : 'bg-card';
+              const accountTextClass = account ? getAccountTextClass(account.color) : 'text-foreground';
+              const accountIconColor = account ? getAccountIconColor(account.color) : 'text-muted-foreground';
               
               return (
                 <div
                   key={transaction.id}
-                  className={`bg-card border-2 ${accountColorClass} rounded-lg p-4`}
+                  className={`border-2 ${accountColorClass} ${accountBgClass} rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02]`}
                 >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-muted/50">
+                  <div className="flex flex-col gap-1 flex-1">
+                    <div className="flex items-center gap-2">
                       {(() => {
                         const category = categories.find(c => c.id === transaction.categoryId);
                         const isTransfer = category?.name === 'transferencia entre cuentas';
                         
                         if (isTransfer) {
-                          return <ArrowRightLeft className="h-4 w-4 text-blue-500" />;
+                          return <ArrowRightLeft className={`h-4 w-4 ${accountIconColor}`} />;
                         } else {
                           const Icon = getCategoryIcon(category?.icon);
-                          return <Icon className="h-4 w-4 text-muted-foreground" />;
+                          return <Icon className={`h-4 w-4 ${accountIconColor}`} />;
                         }
                       })()}
-                    </div>
-                    <div>
-                      <p className="font-medium">
+                      <p className={`font-medium ${accountTextClass}`}>
                         {transaction.note || (() => {
                           const category = categories.find(c => c.id === transaction.categoryId);
                           return category?.name || 'Sin descripción';
                         })()}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {(() => {
-                          const account = accounts.find(acc => acc.id === transaction.accountId);
-                          return account?.name || 'Cuenta desconocida';
-                        })()}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(new Date(transaction.date))}
-                      </p>
                     </div>
+                    <p className={`text-sm ${accountTextClass} opacity-70`}>
+                      {(() => {
+                        const account = accounts.find(acc => acc.id === transaction.accountId);
+                        return `${account?.name || 'Cuenta desconocida'} • ${formatDate(new Date(transaction.date))}`;
+                      })()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {transaction.type === 'ingreso' ? (

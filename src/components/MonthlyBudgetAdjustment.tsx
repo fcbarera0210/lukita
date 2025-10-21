@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { createMonthlyAdjustment, updateMonthlyAdjustment, getMonthlyAdjustments, deleteMonthlyAdjustment } from '@/lib/budgets';
 import { useAuth } from '@/lib/auth';
-import { Save, XCircle } from 'lucide-react';
+import { Save, XCircle, Edit } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 interface MonthlyBudgetAdjustmentProps {
@@ -11,6 +11,8 @@ interface MonthlyBudgetAdjustmentProps {
   month: string;
   currentAmount?: number;
   onUpdate: () => void;
+  textColor?: string; // Agregar prop para color de texto
+  iconColor?: string; // Agregar prop para color del ícono
 }
 
 export function MonthlyBudgetAdjustment({ 
@@ -18,7 +20,9 @@ export function MonthlyBudgetAdjustment({
   defaultAmount, 
   month,
   currentAmount,
-  onUpdate 
+  onUpdate,
+  textColor = 'text-foreground', // Valor por defecto
+  iconColor = 'text-muted-foreground' // Valor por defecto
 }: MonthlyBudgetAdjustmentProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -95,7 +99,7 @@ export function MonthlyBudgetAdjustment({
           type="number"
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
-          className="w-24 px-2 py-1 text-sm border rounded"
+          className={`w-24 px-2 py-1 text-sm border rounded ${textColor}`}
           min="0"
         />
         <Button size="sm" onClick={handleSave} disabled={loading}>
@@ -110,17 +114,15 @@ export function MonthlyBudgetAdjustment({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium">
-        ${(currentAmount || defaultAmount).toLocaleString('es-CL')}
-      </span>
-      <Button 
-        size="sm" 
-        variant="outline" 
+      <button
         onClick={() => setIsEditing(true)}
-        className="text-xs"
+        className="flex items-center gap-1 hover:opacity-70 transition-opacity"
       >
-        Ajustar
-      </Button>
+        <Edit className={`h-3 w-3 ${iconColor}`} />
+        <span className={`text-sm font-medium ${textColor}`}>
+          ${(currentAmount || defaultAmount).toLocaleString('es-CL')}
+        </span>
+      </button>
     </div>
   );
 }

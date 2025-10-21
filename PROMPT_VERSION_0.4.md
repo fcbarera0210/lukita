@@ -285,21 +285,31 @@ La versión 0.4.0 de Lukita se enfoca en **análisis avanzado**, **mejoras de UX
 - ✅ Exportar datos
 - ✅ Búsqueda avanzada
 
-### Fase 4: Gestión Avanzada (Semana 4)
-- ⏳ Presupuestos por categoría
-- ⏳ Transacciones recurrentes
+### Fase 4: Gestión Avanzada (Semana 4) ✅ COMPLETADA
+- ✅ Presupuestos por categoría
+- ✅ Transacciones recurrentes
+- ✅ Sistema de toasts para feedback
+- ✅ Ajustes mensuales de presupuestos
+- ✅ Integración en dashboard en tiempo real
 
-### Fase 5: Revisión de Tendencias (Semana 5)
+### Fase 5: Mejoras Visuales y UX (Semana 5) ✅ COMPLETADA
+- ✅ Rediseño de barra de navegación móvil
+- ✅ Cambio de íconos a ojo (ver/ocultar)
+- ✅ Unificación de botones de visibilidad
+- ✅ Aplicación en todas las pantallas
+- ✅ Mejoras de consistencia visual
+- ✅ Optimización de espacio en pantallas pequeñas
+- ✅ Animaciones suaves y micro-interacciones
+- ✅ Hover effects mejorados
+- ✅ Transiciones de tema fluidas
+- ✅ Sombras sutiles en cards
+- ✅ Skeleton loaders elegantes
+
+### Fase 6: Revisión de Tendencias (Semana 6)
 - ⏳ Mejoras en visualización de tendencias
 - ⏳ Optimización de rendimiento
 - ⏳ Nuevas métricas y análisis
 - ⏳ Refinamiento de UX
-
-### Fase 6: Mejoras Visuales (Semana 6)
-- ⏳ Cambio de íconos a ojo (ver/ocultar)
-- ⏳ Unificación de botones de visibilidad
-- ⏳ Aplicación en todas las pantallas
-- ⏳ Mejoras de consistencia visual
 
 ---
 

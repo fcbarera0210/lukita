@@ -10,9 +10,9 @@ import type { CategoryBudget } from '@/types/budget';
 import type { Category } from '@/types/category';
 import { db } from '@/lib/firebase';
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
-import { PieChart, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { PieChart, Plus, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 import { useToast } from '@/components/ui/Toast';
 
 export default function BudgetsPage() {
@@ -70,7 +70,7 @@ export default function BudgetsPage() {
       </div>
 
       {/* Page Description */}
-      <PageDescription
+      <CollapsibleDescription
         title="Gestión de Presupuestos"
         description="Establece límites de gasto por categoría para mantener control sobre tus finanzas. Configura presupuestos mensuales, recibe alertas cuando te acerques a los límites, y visualiza tu progreso con gráficos intuitivos."
         icon={<PieChart className="h-5 w-5 text-primary" />}
@@ -83,7 +83,7 @@ export default function BudgetsPage() {
             <h2 className="text-lg font-semibold">Presupuestos ({month.split('-').reverse().join('-')})</h2>
           </div>
           <Button variant="ghost" onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-2">
-            {isExpanded ? (<><ChevronUp className="h-4 w-4" /> Ocultar</>) : (<><ChevronDown className="h-4 w-4" /> Mostrar</>)}
+            {isExpanded ? (<><EyeOff className="h-4 w-4" /> Ocultar</>) : (<><Eye className="h-4 w-4" /> Mostrar</>)}
           </Button>
         </div>
         

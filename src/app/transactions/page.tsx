@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical, ChevronDown, ChevronUp, ArrowRightLeft, Receipt, Download } from 'lucide-react';
+import { Plus, CreditCard, Edit, Trash2, Filter, TrendingUp, TrendingDown, MoreVertical, Eye, EyeOff, ArrowRightLeft, Receipt, Download } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction, createTransfer } from '@/lib/firestore';
 import { getAccounts } from '@/lib/firestore';
@@ -19,11 +19,11 @@ import { formatCLP } from '@/lib/clp';
 import { formatDate } from '@/lib/dates';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { useFabContext } from '@/components/ConditionalLayout';
-import { getAccountColorClass } from '@/lib/account-colors';
+import { getAccountColorClass, getAccountBackgroundClass, getAccountTextClass, getAccountIconColor } from '@/lib/account-colors';
 import { PieChart } from '@/components/charts';
 import { ExportData } from '@/components/ExportData';
 import { addCustomEventListener, CUSTOM_EVENTS } from '@/lib/custom-events';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 import { AdvancedFilters, AdvancedFiltersState, SavedView } from '@/components/AdvancedFilters';
 import { FilterActionButtons } from '@/components/FilterActionButtons';
 import { 
@@ -350,7 +350,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Page Description */}
-        <PageDescription
+        <CollapsibleDescription
           title="Gestión de Transacciones"
           description="Administra y revisa todas tus transacciones financieras. Puedes filtrar por fecha, categoría, cuenta y tipo de transacción. Visualiza tus gastos mensuales con el gráfico de torta, crea nuevas transacciones, edita las existentes y exporta tus datos para análisis externos."
           icon={<Receipt className="h-5 w-5 text-primary" />}
@@ -390,9 +390,9 @@ export default function TransactionsPage() {
                 title={showAdvancedFilters ? "Ocultar filtros" : "Mostrar filtros"}
               >
                 {showAdvancedFilters ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -426,12 +426,12 @@ export default function TransactionsPage() {
               >
                 {showChart ? (
                   <>
-                    <ChevronUp className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4" />
                     Ocultar gráfico
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                     Ver gráfico
                   </>
                 )}
@@ -474,6 +474,9 @@ export default function TransactionsPage() {
               const CategoryIcon = getCategoryIcon(category?.icon);
               const isMenuOpen = openMenuId === transaction.id;
               const accountColorClass = account ? getAccountColorClass(account.color) : 'border-border';
+              const accountBgClass = account ? getAccountBackgroundClass(account.color) : 'bg-card';
+              const accountTextClass = account ? getAccountTextClass(account.color) : 'text-foreground';
+              const accountIconColor = account ? getAccountIconColor(account.color) : 'text-muted-foreground';
               
               // Detectar si es una transferencia
               const isTransfer = category?.name === 'transferencia entre cuentas';
@@ -481,33 +484,26 @@ export default function TransactionsPage() {
               return (
                 <div
                   key={transaction.id}
-                  className={`bg-card border-2 ${accountColorClass} rounded-lg p-4 ${
+                  className={`border-2 ${accountColorClass} ${accountBgClass} rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
                     isTransfer ? 'border-l-4 border-r-4' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    {/* Left side - Category icon */}
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className={`p-2 rounded-full ${isTransfer ? 'bg-blue-500/20' : 'bg-muted/50'}`}>
+                    {/* Left side - Category icon and title */}
+                    <div className="flex flex-col gap-1 flex-1">
+                      <div className="flex items-center gap-2">
                         {isTransfer ? (
-                          <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                          <ArrowRightLeft className={`h-4 w-4 ${accountIconColor}`} />
                         ) : (
-                          <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                          <CategoryIcon className={`h-4 w-4 ${accountIconColor}`} />
                         )}
-                      </div>
-                      
-                      {/* Transaction details */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground">
+                        <h3 className={`font-medium ${accountTextClass}`}>
                           {transaction.note || category?.name || 'Sin descripción'}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {account?.name || 'Cuenta desconocida'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(new Date(transaction.date))}
-                        </p>
                       </div>
+                      <p className={`text-sm ${accountTextClass} opacity-70`}>
+                        {account?.name || 'Cuenta desconocida'} • {formatDate(new Date(transaction.date))}
+                      </p>
                     </div>
 
                     {/* Right side - Amount and menu */}
@@ -528,14 +524,24 @@ export default function TransactionsPage() {
 
                       {/* Menu button */}
                       <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        <button
                           onClick={() => toggleMenu(transaction.id)}
-                          className="h-8 w-8"
+                          className="h-8 w-8 rounded-md hover:bg-white/20 flex items-center justify-center"
                         >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                          <MoreVertical 
+                            className="h-4 w-4" 
+                            style={{ 
+                              color: accountTextClass.includes('blue') ? '#1e40af' : 
+                                     accountTextClass.includes('green') ? '#166534' :
+                                     accountTextClass.includes('red') ? '#991b1b' :
+                                     accountTextClass.includes('yellow') ? '#a16207' :
+                                     accountTextClass.includes('purple') ? '#6b21a8' :
+                                     accountTextClass.includes('pink') ? '#be185d' :
+                                     accountTextClass.includes('cyan') ? '#155e75' :
+                                     accountTextClass.includes('orange') ? '#c2410c' : '#000000'
+                            }}
+                          />
+                        </button>
 
                         {/* Dropdown menu */}
                         {isMenuOpen && (

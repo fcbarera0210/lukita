@@ -14,7 +14,8 @@ import {
   ArrowRightLeft,
   TrendingUp,
   PieChart,
-  CalendarClock
+  CalendarClock,
+  MoreHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -32,7 +33,8 @@ import { useToast } from '@/components/ui/Toast';
 import { MAX_ACCOUNTS } from '@/lib/account-colors';
 import { dispatchCustomEvent, CUSTOM_EVENTS, addCustomEventListener } from '@/lib/custom-events';
 
-const navigationItems = [
+// Elementos principales de navegación (siempre visibles)
+const primaryNavigationItems = [
   {
     name: 'Inicio',
     href: '/dashboard',
@@ -48,6 +50,15 @@ const navigationItems = [
     href: '/accounts',
     icon: Wallet,
   },
+  {
+    name: 'Ajustes',
+    href: '/settings',
+    icon: Settings,
+  },
+];
+
+// Elementos secundarios (en menú "Más")
+const secondaryNavigationItems = [
   {
     name: 'Categorías',
     href: '/categories',
@@ -68,41 +79,98 @@ const navigationItems = [
     href: '/recurring',
     icon: CalendarClock,
   },
-  {
-    name: 'Ajustes',
-    href: '/settings',
-    icon: Settings,
-  },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  // Verificar si algún elemento secundario está activo
+  const isSecondaryActive = secondaryNavigationItems.some(item => pathname === item.href);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
       <div className="flex items-center justify-around py-3 pb-6 px-4">
-        {navigationItems.map((item) => {
+        {/* Elementos principales */}
+        {primaryNavigationItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-w-0 flex-1',
-                {
-                  'text-primary': isActive,
-                  'text-muted-foreground hover:text-foreground': !isActive,
-                }
-              )}
-            >
-              <Icon className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium truncate">{item.name}</span>
-            </Link>
-          );
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 min-w-0 flex-1 relative',
+                    {
+                      'text-primary bg-primary/10': isActive,
+                      'text-muted-foreground hover:text-foreground hover:bg-muted/50': !isActive,
+                    }
+                  )}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs font-medium truncate">{item.name}</span>
+                  {isActive && (
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  )}
+                </Link>
+              );
         })}
+
+        {/* Botón "Más" */}
+        <button
+          onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+          className={cn(
+            'flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-w-0 flex-1 relative',
+            {
+              'text-primary': isMoreMenuOpen || isSecondaryActive,
+              'text-muted-foreground hover:text-foreground': !isMoreMenuOpen && !isSecondaryActive,
+            }
+          )}
+        >
+          <MoreHorizontal className="h-5 w-5 mb-1" />
+          <span className="text-xs font-medium truncate">Más</span>
+        </button>
       </div>
+
+      {/* Menú desplegable "Más" */}
+      {isMoreMenuOpen && (
+        <div className="absolute bottom-full left-0 right-0 bg-card border-t border-border shadow-lg z-50 animate-in slide-in-from-bottom-2 duration-200">
+          <div className="grid grid-cols-2 gap-2 p-4">
+            {secondaryNavigationItems.map((item, index) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMoreMenuOpen(false)}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 hover:scale-105',
+                    {
+                      'text-primary bg-primary/10': isActive,
+                      'text-muted-foreground hover:text-foreground hover:bg-muted/50': !isActive,
+                    }
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <Icon className="h-6 w-6 mb-2" />
+                  <span className="text-xs font-medium text-center">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Overlay para cerrar menú */}
+      {isMoreMenuOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setIsMoreMenuOpen(false)}
+        />
+      )}
     </nav>
   );
 }

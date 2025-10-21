@@ -3,7 +3,7 @@ import type { RecurringTransaction } from '@/types/recurring';
 import type { AccountColorId } from '@/lib/account-colors';
 import { getUpcomingOccurrences, updateRecurring } from '@/lib/recurring';
 import { useAuth } from '@/lib/auth';
-import { getAccountColorClass, getAccountBackgroundClass } from '@/lib/account-colors';
+import { getAccountColorClass, getAccountBackgroundClass, getAccountTextClass } from '@/lib/account-colors';
 import { TrendingUp, TrendingDown, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -26,11 +26,12 @@ export function RecurringTransactionCard({ item, accountColor }: RecurringTransa
 
   const colorClass = accountColor ? getAccountColorClass(accountColor as AccountColorId) : 'border-border';
   const bgClass = accountColor ? getAccountBackgroundClass(accountColor as AccountColorId) : 'bg-card';
+  const textClass = accountColor ? getAccountTextClass(accountColor as AccountColorId) : 'text-foreground';
   
   return (
     <div className={`rounded-lg border-2 p-4 ${colorClass} ${bgClass}`}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-medium">{local.note ?? local.categoryId}</h3>
+        <h3 className={`font-medium ${textClass}`}>{local.note ?? local.categoryId}</h3>
         <div className="flex items-center gap-2">
           <span className="px-2 py-1 text-xs rounded-full bg-muted text-muted-foreground">
             {local.recurrence}
@@ -56,9 +57,9 @@ export function RecurringTransactionCard({ item, accountColor }: RecurringTransa
         </div>
       </div>
       
-      <div className="mt-2 text-xs text-muted-foreground">
-        Próximas: {nextDates.map(d => d.toLocaleDateString('es-CL')).join(', ')}
-      </div>
+          <div className={`mt-2 text-xs ${textClass} opacity-70`}>
+            Próximas: {nextDates.map(d => d.toLocaleDateString('es-CL')).join(', ')}
+          </div>
       
       <div className="mt-3">
             <Button

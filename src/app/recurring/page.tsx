@@ -13,7 +13,7 @@ import { db } from '@/lib/firebase';
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { CalendarClock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 import { useToast } from '@/components/ui/Toast';
 
 export default function RecurringPage() {
@@ -63,7 +63,7 @@ export default function RecurringPage() {
       </div>
 
       {/* Page Description */}
-      <PageDescription
+      <CollapsibleDescription
         title="Gestión de Transacciones Recurrentes"
         description="Automatiza tus transacciones regulares como sueldos, rentas o suscripciones. Programa transacciones que se repitan automáticamente cada mes, semana o quincena. Pausa o modifica las transacciones cuando sea necesario."
         icon={<CalendarClock className="h-5 w-5 text-primary" />}

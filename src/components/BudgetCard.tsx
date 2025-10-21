@@ -21,9 +21,9 @@ export function BudgetCard({ budget, month, onUpdate }: BudgetCardProps) {
   };
 
   const getStatusColor = () => {
-    if (progress.isOverLimit) return 'border-red-500 bg-red-50 dark:bg-red-950';
-    if (progress.percentageUsed >= 80) return 'border-amber-500 bg-amber-50 dark:bg-amber-950';
-    return 'border-green-500 bg-green-50 dark:bg-green-950';
+    if (progress.isOverLimit) return 'border-red-500 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900';
+    if (progress.percentageUsed >= 80) return 'border-amber-500 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900';
+    return 'border-green-500 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900';
   };
 
   const getProgressColor = () => {
@@ -33,17 +33,23 @@ export function BudgetCard({ budget, month, onUpdate }: BudgetCardProps) {
   };
 
   const getTextColor = () => {
-    if (progress.isOverLimit) return 'text-red-600';
-    if (progress.percentageUsed >= 80) return 'text-amber-600';
-    return 'text-zinc-500';
+    if (progress.isOverLimit) return 'text-red-900 dark:text-red-100';
+    if (progress.percentageUsed >= 80) return 'text-amber-900 dark:text-amber-100';
+    return 'text-green-900 dark:text-green-100';
+  };
+
+  const getIconColor = () => {
+    if (progress.isOverLimit) return 'text-red-700 dark:text-red-300';
+    if (progress.percentageUsed >= 80) return 'text-amber-700 dark:text-amber-300';
+    return 'text-green-700 dark:text-green-300';
   };
 
   return (
     <div className={`rounded-lg border-2 p-4 ${getStatusColor()}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {React.createElement(getCategoryIcon(budget.categoryIcon), { className: "h-4 w-4 text-muted-foreground" })}
-          <h3 className="font-semibold">{budget.categoryId}</h3>
+          {React.createElement(getCategoryIcon(budget.categoryIcon), { className: `h-4 w-4 ${getIconColor()}` })}
+          <h3 className={`font-semibold ${getTextColor()}`}>{budget.categoryId}</h3>
         </div>
         <div className="flex items-center gap-2">
           {getStatusIcon()}
@@ -60,32 +66,34 @@ export function BudgetCard({ budget, month, onUpdate }: BudgetCardProps) {
         />
       </div>
       
-      <div className="mt-3 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Gastado:</span>
-          <span className="font-medium">${(budget.spentAmount || 0).toLocaleString('es-CL')}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Límite:</span>
-          {month && onUpdate ? (
-              <MonthlyBudgetAdjustment
-                budgetId={budget.id}
-                defaultAmount={budget.defaultAmount}
-                month={month}
-                currentAmount={budget.effectiveAmount}
-                onUpdate={onUpdate}
-              />
-          ) : (
-            <span className="font-medium">${(budget.effectiveAmount || budget.defaultAmount || 0).toLocaleString('es-CL')}</span>
-          )}
-        </div>
-        <div className="flex justify-between mt-1 pt-1 border-t">
-          <span className="text-muted-foreground">Restante:</span>
-          <span className={`font-semibold ${progress.remainingAmount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            ${progress.remainingAmount.toLocaleString('es-CL')}
-          </span>
-        </div>
-      </div>
+          <div className="mt-3 text-sm">
+            <div className="flex justify-between">
+              <span className={`text-muted-foreground ${getTextColor()} opacity-70`}>Gastado:</span>
+              <span className={`font-medium ${getTextColor()}`}>${(budget.spentAmount || 0).toLocaleString('es-CL')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={`text-muted-foreground ${getTextColor()} opacity-70`}>Límite:</span>
+              {month && onUpdate ? (
+                <MonthlyBudgetAdjustment
+                  budgetId={budget.id}
+                  defaultAmount={budget.defaultAmount}
+                  month={month}
+                  currentAmount={budget.effectiveAmount}
+                  onUpdate={onUpdate}
+                  textColor={getTextColor()}
+                  iconColor={getIconColor()}
+                />
+              ) : (
+                <span className={`font-medium ${getTextColor()}`}>${(budget.effectiveAmount || budget.defaultAmount || 0).toLocaleString('es-CL')}</span>
+              )}
+            </div>
+            <div className="flex justify-between mt-1 pt-1 border-t">
+              <span className={`text-muted-foreground ${getTextColor()} opacity-70`}>Restante:</span>
+              <span className={`font-semibold ${progress.remainingAmount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                ${progress.remainingAmount.toLocaleString('es-CL')}
+              </span>
+            </div>
+          </div>
       
       {progress.isOverLimit && (
         <div className="mt-2 text-sm text-red-600 font-medium">

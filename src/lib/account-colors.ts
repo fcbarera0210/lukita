@@ -89,22 +89,47 @@ export const getAccountColorClass = (colorId: AccountColorId): string => {
 
 export const getAccountBackgroundClass = (colorId: AccountColorId): string => {
   const colorMap: Record<AccountColorId, string> = {
-    blue: 'bg-blue-50 dark:bg-blue-950',
-    green: 'bg-green-50 dark:bg-green-950',
-    red: 'bg-red-50 dark:bg-red-950',
-    yellow: 'bg-yellow-50 dark:bg-yellow-950',
-    purple: 'bg-purple-50 dark:bg-purple-950',
-    pink: 'bg-pink-50 dark:bg-pink-950',
-    cyan: 'bg-cyan-50 dark:bg-cyan-950',
-    orange: 'bg-orange-50 dark:bg-orange-950'
+    blue: 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900',
+    green: 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900',
+    red: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900',
+    yellow: 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900',
+    purple: 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900',
+    pink: 'bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900',
+    cyan: 'bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900',
+    orange: 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900'
   };
   
   return colorMap[colorId] || 'bg-card';
 };
 
-export const getAccountColorValue = (colorId: AccountColorId): string => {
-  const color = getColorById(colorId);
-  return color ? color.value : '#6B7280'; // Default fallback (gray-500)
+export const getAccountTextClass = (colorId: AccountColorId): string => {
+  const colorMap: Record<AccountColorId, string> = {
+    blue: 'text-blue-900 dark:text-blue-100',
+    green: 'text-green-900 dark:text-green-100',
+    red: 'text-red-900 dark:text-red-100',
+    yellow: 'text-yellow-900 dark:text-yellow-100',
+    purple: 'text-purple-900 dark:text-purple-100',
+    pink: 'text-pink-900 dark:text-pink-100',
+    cyan: 'text-cyan-900 dark:text-cyan-100',
+    orange: 'text-orange-900 dark:text-orange-100'
+  };
+  
+  return colorMap[colorId] || 'text-foreground';
+};
+
+export const getAccountIconColor = (colorId: AccountColorId): string => {
+  const colorMap: Record<AccountColorId, string> = {
+    blue: 'text-blue-500',
+    green: 'text-green-500',
+    red: 'text-red-500',
+    yellow: 'text-yellow-500',
+    purple: 'text-purple-500',
+    pink: 'text-pink-500',
+    cyan: 'text-cyan-500',
+    orange: 'text-orange-500'
+  };
+  
+  return colorMap[colorId] || 'text-muted-foreground';
 };
 
 // Constantes para límites

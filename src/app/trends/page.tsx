@@ -7,7 +7,7 @@ import { getTrendData, TrendData } from '@/lib/firestore';
 import { TrendChart } from '@/components/charts';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { PageDescription } from '@/components/PageDescription';
+import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 
 export default function TrendsPage() {
   const { user } = useAuth();
@@ -80,7 +80,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Page Description */}
-      <PageDescription
+      <CollapsibleDescription
         title="Análisis de Tendencias Financieras"
         description="Analiza la evolución de tus finanzas a lo largo del tiempo. Visualiza tendencias de ingresos, gastos y balance con diferentes períodos de tiempo. Usa los filtros para ajustar el rango de fechas y el tipo de análisis que necesites."
         icon={<BarChart3 className="h-5 w-5 text-primary" />}
