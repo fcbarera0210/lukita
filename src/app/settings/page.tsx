@@ -50,10 +50,11 @@ export default function SettingsPage() {
         setUserSettings(settings);
         setTheme(settings.theme);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         showToast({
           type: 'error',
-          title: 'Error',
-          description: 'No se pudieron cargar las configuraciones',
+          title: 'Error al cargar configuraciones',
+          description: `No se pudieron cargar las configuraciones: ${errorMessage}`,
         });
       } finally {
         setLoading(false);
@@ -83,10 +84,11 @@ export default function SettingsPage() {
           description: 'El tema se ha guardado correctamente',
         });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         showToast({
           type: 'error',
-          title: 'Error',
-          description: 'No se pudo guardar el tema',
+          title: 'Error al guardar tema',
+          description: `No se pudo guardar el tema: ${errorMessage}`,
         });
       }
     }
@@ -107,10 +109,11 @@ export default function SettingsPage() {
           description: 'El día de corte se ha guardado correctamente',
         });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         showToast({
           type: 'error',
-          title: 'Error',
-          description: 'No se pudo guardar el día de corte',
+          title: 'Error al guardar día de corte',
+          description: `No se pudo guardar el día de corte: ${errorMessage}`,
         });
       }
     }
@@ -131,10 +134,11 @@ export default function SettingsPage() {
         description: 'Has cerrado sesión exitosamente',
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo cerrar la sesión',
+        title: 'Error al cerrar sesión',
+        description: `No se pudo cerrar la sesión: ${errorMessage}`,
       });
     }
   };
@@ -143,8 +147,8 @@ export default function SettingsPage() {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'Las contraseñas no coinciden',
+        title: 'Contraseñas no coinciden',
+        description: 'Las contraseñas ingresadas no coinciden. Por favor, verifica que ambas sean iguales',
       });
       return;
     }
@@ -152,7 +156,7 @@ export default function SettingsPage() {
     if (passwordForm.newPassword.length < 6) {
       showToast({
         type: 'error',
-        title: 'Error',
+        title: 'Contraseña muy corta',
         description: 'La nueva contraseña debe tener al menos 6 caracteres',
       });
       return;
@@ -174,9 +178,10 @@ export default function SettingsPage() {
         confirmPassword: ''
       });
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
+        title: 'Error al cambiar contraseña',
         description: error instanceof Error ? error.message : 'No se pudo cambiar la contraseña',
       });
     } finally {
@@ -201,26 +206,23 @@ export default function SettingsPage() {
   return (
     
       <div className="p-4 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Settings className="h-8 w-8 text-muted-foreground" />
-            <h1 className="text-2xl font-bold">Ajustes</h1>
+        {/* Page Description */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <CollapsibleDescription
+              title="Configuración de la Aplicación"
+              description="Personaliza tu experiencia con Lukita. Cambia entre tema claro y oscuro, actualiza tu información personal, modifica tu contraseña y gestiona la configuración de la aplicación."
+              icon={<Cog className="h-5 w-5 text-primary" />}
+            />
           </div>
           <Button 
             onClick={handleLogout} 
             size="icon" 
-            className="h-10 w-10 bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-200"
+            className="h-10 w-10 flex-shrink-0 bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-200"
           >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Page Description */}
-        <CollapsibleDescription
-          title="Configuración de la Aplicación"
-          description="Personaliza tu experiencia con Lukita. Cambia entre tema claro y oscuro, actualiza tu información personal, modifica tu contraseña y gestiona la configuración de la aplicación."
-          icon={<Cog className="h-5 w-5 text-primary" />}
-        />
 
         {/* Configuración de Tema */}
         <div className="space-y-3">

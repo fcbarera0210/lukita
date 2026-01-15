@@ -82,10 +82,11 @@ export default function TransactionsPage() {
       const views = getSavedViewsFromStorage(user.uid);
       setSavedViews(views);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudieron cargar los datos',
+        title: 'Error al cargar transacciones',
+        description: `No se pudieron cargar los datos: ${errorMessage}`,
       });
     } finally {
       setLoading(false);
@@ -105,10 +106,11 @@ export default function TransactionsPage() {
         description: `La vista "${name}" se guardó correctamente`
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo guardar la vista'
+        title: 'Error al guardar vista',
+        description: `No se pudo guardar la vista: ${errorMessage}`
       });
     }
   }, [user, showToast]);
@@ -134,10 +136,11 @@ export default function TransactionsPage() {
         description: 'La vista se eliminó correctamente'
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo eliminar la vista'
+        title: 'Error al eliminar vista',
+        description: `No se pudo eliminar la vista: ${errorMessage}`
       });
     }
   }, [user, showToast]);
@@ -201,10 +204,11 @@ export default function TransactionsPage() {
       });
       await loadData();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo eliminar la transacción',
+        title: 'Error al eliminar transacción',
+        description: `No se pudo eliminar la transacción: ${errorMessage}`,
       });
     }
   };
@@ -328,33 +332,30 @@ export default function TransactionsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CreditCard className="h-8 w-8 text-muted-foreground" />
-            <h1 className="text-2xl font-bold">Transacciones</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={openTransferModal} 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10"
-              title="Transferir entre cuentas"
-            >
-              <ArrowRightLeft className="h-4 w-4" />
-            </Button>
-            <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Page Description */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <CollapsibleDescription
+            title="Gestión de Transacciones"
+            description="Administra y revisa todas tus transacciones financieras. Puedes filtrar por fecha, categoría, cuenta y tipo de transacción. Visualiza tus gastos mensuales con el gráfico de torta, crea nuevas transacciones, edita las existentes y exporta tus datos para análisis externos."
+            icon={<Receipt className="h-5 w-5 text-primary" />}
+          />
         </div>
-
-        {/* Page Description */}
-        <CollapsibleDescription
-          title="Gestión de Transacciones"
-          description="Administra y revisa todas tus transacciones financieras. Puedes filtrar por fecha, categoría, cuenta y tipo de transacción. Visualiza tus gastos mensuales con el gráfico de torta, crea nuevas transacciones, edita las existentes y exporta tus datos para análisis externos."
-          icon={<Receipt className="h-5 w-5 text-primary" />}
-        />
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button 
+            onClick={openTransferModal} 
+            variant="outline" 
+            size="icon" 
+            className="h-10 w-10"
+            title="Transferir entre cuentas"
+          >
+            <ArrowRightLeft className="h-4 w-4" />
+          </Button>
+          <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
         {/* Filtros */}
         <div>

@@ -59,10 +59,11 @@ function NewTransactionPageContent() {
         );
         setCategories(filteredCategories);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         showToast({
           type: 'error',
-          title: 'Error',
-          description: 'No se pudieron cargar los datos',
+          title: 'Error al cargar datos',
+          description: `No se pudieron cargar los datos: ${errorMessage}`,
         });
       } finally {
         setLoading(false);

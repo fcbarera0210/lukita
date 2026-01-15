@@ -364,32 +364,21 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-1">
-            <span className="text-foreground">
-              {welcomeMessage.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
-            </span>
-            <span>
-              {welcomeMessage.match(/[\u{1F300}-\u{1F9FF}]/gu)?.join('') || ''}
-            </span>
-          </h1>
-          <p className="text-muted-foreground">
-            Resumen de tus finanzas
-          </p>
-        </div>
-        
-        {/* Frase motivadora */}
-        <MotivationalQuote />
-      </div>
-
       {/* Page Description */}
       <CollapsibleDescription
         title="Panel de Control Financiero"
         description="Bienvenido a tu panel de control financiero. Aquí puedes ver un resumen completo de tus finanzas: balance total, transacciones recientes, resumen mensual con gráficos por categoría, y comparaciones con meses anteriores. Usa los controles de fecha para navegar entre diferentes períodos."
-        icon={<Home className="h-5 w-5 text-primary" />}
+        icon={
+          <img 
+            src="/svg/logo-icono.svg" 
+            alt="Lukita" 
+            className="w-10 h-[30px]"
+          />
+        }
       />
+      
+      {/* Frase motivadora */}
+      <MotivationalQuote />
 
       {/* Balance Total */}
       <div>

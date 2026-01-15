@@ -51,23 +51,19 @@ export default function RecurringPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Transacciones Recurrentes</h1>
+      {/* Page Description */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <CollapsibleDescription
+            title="Gestión de Transacciones Recurrentes"
+            description="Automatiza tus transacciones regulares como sueldos, rentas o suscripciones. Programa transacciones que se repitan automáticamente cada mes, semana o quincena. Pausa o modifica las transacciones cuando sea necesario."
+            icon={<CalendarClock className="h-5 w-5 text-primary" />}
+          />
         </div>
-        <Button onClick={() => setOpen(true)} size="icon">
+        <Button onClick={() => setOpen(true)} size="icon" className="flex-shrink-0">
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Page Description */}
-      <CollapsibleDescription
-        title="Gestión de Transacciones Recurrentes"
-        description="Automatiza tus transacciones regulares como sueldos, rentas o suscripciones. Programa transacciones que se repitan automáticamente cada mes, semana o quincena. Pausa o modifica las transacciones cuando sea necesario."
-        icon={<CalendarClock className="h-5 w-5 text-primary" />}
-      />
 
       {/* Recurrentes */}
       {items.length === 0 ? (

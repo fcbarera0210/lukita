@@ -34,10 +34,11 @@ function CategoriesPageContent() {
       const categoriesData = await getCategories(user.uid);
       setCategories(categoriesData);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudieron cargar las categorías',
+        title: 'Error al cargar categorías',
+        description: `No se pudieron cargar las categorías: ${errorMessage}`,
       });
     } finally {
       setLoading(false);
@@ -104,10 +105,11 @@ function CategoriesPageContent() {
       });
       await loadCategories();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo eliminar la categoría',
+        title: 'Error al eliminar categoría',
+        description: `No se pudo eliminar la categoría: ${errorMessage}`,
       });
     }
   };
@@ -156,22 +158,19 @@ function CategoriesPageContent() {
   return (
     
       <div className="p-4 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Tag className="h-8 w-8 text-muted-foreground" />
-            <h1 className="text-2xl font-bold">Categorías</h1>
+        {/* Page Description */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <CollapsibleDescription
+              title="Gestión de Categorías"
+              description="Organiza tus gastos e ingresos con categorías personalizadas. Crea categorías con íconos únicos para clasificar tus transacciones. Personaliza nombres, íconos y tipos de categoría. La categoría 'transferencia entre cuentas' es del sistema y no se puede modificar."
+              icon={<Tags className="h-5 w-5 text-primary" />}
+            />
           </div>
-          <Button onClick={openCreateModal} size="icon" className="h-10 w-10">
+          <Button onClick={openCreateModal} size="icon" className="h-10 w-10 flex-shrink-0">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Page Description */}
-        <CollapsibleDescription
-          title="Gestión de Categorías"
-          description="Organiza tus gastos e ingresos con categorías personalizadas. Crea categorías con íconos únicos para clasificar tus transacciones. Personaliza nombres, íconos y tipos de categoría. La categoría 'transferencia entre cuentas' es del sistema y no se puede modificar."
-          icon={<Tags className="h-5 w-5 text-primary" />}
-        />
 
         {categories.length === 0 ? (
           <div className="text-center py-12">

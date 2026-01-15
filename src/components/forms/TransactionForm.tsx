@@ -90,10 +90,11 @@ export function TransactionForm({
         description: `La transacción ha sido ${transaction ? 'actualizada' : 'creada'} exitosamente`,
       });
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo guardar la transacción',
+        title: 'Error al guardar transacción',
+        description: `No se pudo guardar la transacción: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);

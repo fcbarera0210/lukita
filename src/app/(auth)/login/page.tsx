@@ -59,8 +59,8 @@ export default function LoginPage() {
     if (!recoveryEmail) {
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'Por favor ingresa tu email',
+        title: 'Email requerido',
+        description: 'Por favor ingresa tu email para recuperar tu contraseña',
       });
       return;
     }
@@ -76,10 +76,11 @@ export default function LoginPage() {
       setIsRecoveryMode(false);
       setRecoveryEmail('');
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo enviar el email de recuperación',
+        title: 'Error al enviar email de recuperación',
+        description: `No se pudo enviar el email de recuperación: ${errorMessage}`,
       });
     } finally {
       setIsSendingRecovery(false);
@@ -133,7 +134,13 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold">Lukita</h1>
+        <div className="flex justify-center mb-2">
+          <img 
+            src="/svg/logo-lukita-2.svg" 
+            alt="Lukita" 
+            className="h-20"
+          />
+        </div>
         <p className="text-muted-foreground mt-2">
           Inicia sesión en tu cuenta
         </p>

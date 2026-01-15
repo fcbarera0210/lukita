@@ -8,8 +8,10 @@
   --card-foreground: #ffffff;
   --border: #2a2a2f;
   --input: #1a1a1f;
-  --primary: #3b82f6;
+  --primary: #00C6DB;
   --primary-foreground: #ffffff;
+  --primary-gradient-start: #96E148;
+  --primary-gradient-end: #00C6DB;
   --secondary: #2a2a2f;
   --secondary-foreground: #ffffff;
   --muted: #2a2a2f;
@@ -18,6 +20,7 @@
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+  --text-primary: #375A64;
 }
 
 @theme inline {
@@ -29,6 +32,8 @@
   --color-input: var(--input);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-gradient-start: var(--primary-gradient-start);
+  --color-primary-gradient-end: var(--primary-gradient-end);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -37,6 +42,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-text-primary: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -44,42 +50,48 @@
 /* Light theme - applied when .light class is present */
 .light {
   --background: #ffffff;
-  --foreground: #0a0a0a;
+  --foreground: #375A64;
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #375A64;
   --border: #e4e4e7;
   --input: #ffffff;
-  --primary: #3b82f6;
+  --primary: #00C6DB;
   --primary-foreground: #ffffff;
+  --primary-gradient-start: #96E148;
+  --primary-gradient-end: #00C6DB;
   --secondary: #f4f4f5;
-  --secondary-foreground: #0a0a0a;
+  --secondary-foreground: #375A64;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
   --accent: #f4f4f5;
-  --accent-foreground: #0a0a0a;
+  --accent-foreground: #375A64;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+  --text-primary: #375A64;
 }
 
 /* System theme - respects user's OS preference */
 @media (prefers-color-scheme: light) {
   :root:not(.dark):not(.light) {
     --background: #ffffff;
-    --foreground: #0a0a0a;
+    --foreground: #375A64;
     --card: #ffffff;
-    --card-foreground: #0a0a0a;
+    --card-foreground: #375A64;
     --border: #e4e4e7;
     --input: #ffffff;
-    --primary: #3b82f6;
+    --primary: #00C6DB;
     --primary-foreground: #ffffff;
+    --primary-gradient-start: #96E148;
+    --primary-gradient-end: #00C6DB;
     --secondary: #f4f4f5;
-    --secondary-foreground: #0a0a0a;
+    --secondary-foreground: #375A64;
     --muted: #f4f4f5;
     --muted-foreground: #71717a;
     --accent: #f4f4f5;
-    --accent-foreground: #0a0a0a;
+    --accent-foreground: #375A64;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
+    --text-primary: #375A64;
   }
 }
 
@@ -146,4 +158,16 @@ body {
 
 .scrollbar-auto-hide:not(:hover):not(:active)::-webkit-scrollbar-thumb {
   background-color: transparent;
+}
+
+/* Gradient utility classes */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

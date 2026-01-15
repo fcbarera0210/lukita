@@ -58,23 +58,19 @@ export default function BudgetsPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PieChart className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Presupuestos</h1>
+      {/* Page Description */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <CollapsibleDescription
+            title="Gestión de Presupuestos"
+            description="Establece límites de gasto por categoría para mantener control sobre tus finanzas. Configura presupuestos mensuales, recibe alertas cuando te acerques a los límites, y visualiza tu progreso con gráficos intuitivos."
+            icon={<PieChart className="h-5 w-5 text-primary" />}
+          />
         </div>
-        <Button onClick={() => setOpen(true)} size="icon">
+        <Button onClick={() => setOpen(true)} size="icon" className="flex-shrink-0">
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Page Description */}
-      <CollapsibleDescription
-        title="Gestión de Presupuestos"
-        description="Establece límites de gasto por categoría para mantener control sobre tus finanzas. Configura presupuestos mensuales, recibe alertas cuando te acerques a los límites, y visualiza tu progreso con gráficos intuitivos."
-        icon={<PieChart className="h-5 w-5 text-primary" />}
-      />
 
       {/* Presupuestos del mes */}
       <div>

@@ -40,10 +40,11 @@ function AccountsPageContent() {
       setAccounts(accountsData);
       setTransactions(transactionsData);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudieron cargar las cuentas',
+        title: 'Error al cargar cuentas',
+        description: `No se pudieron cargar las cuentas: ${errorMessage}`,
       });
     } finally {
       setLoading(false);
@@ -157,10 +158,11 @@ function AccountsPageContent() {
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_ACCOUNTS);
       dispatchCustomEvent(CUSTOM_EVENTS.REFRESH_DASHBOARD);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: 'No se pudo eliminar la cuenta',
+        title: 'Error al eliminar cuenta',
+        description: `No se pudo eliminar la cuenta: ${errorMessage}`,
       });
     }
   };
@@ -205,28 +207,25 @@ function AccountsPageContent() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Wallet className="h-8 w-8 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Cuentas</h1>
+      {/* Page Description */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <CollapsibleDescription
+            title="Gestión de Cuentas"
+            description="Gestiona todas tus cuentas bancarias y de efectivo. Crea hasta 8 cuentas con colores únicos para fácil identificación. Cada cuenta muestra su balance actual que se actualiza automáticamente con cada transacción. Las transferencias entre cuentas se reflejan aquí."
+            icon={<Building2 className="h-5 w-5 text-primary" />}
+          />
         </div>
         <Button 
           onClick={openCreateModal} 
           size="icon" 
-          className="h-10 w-10"
+          className="h-10 w-10 flex-shrink-0"
           disabled={accounts.length >= MAX_ACCOUNTS}
           title={accounts.length >= MAX_ACCOUNTS ? `Máximo ${MAX_ACCOUNTS} cuentas permitidas` : 'Crear nueva cuenta'}
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Page Description */}
-      <CollapsibleDescription
-        title="Gestión de Cuentas"
-        description="Gestiona todas tus cuentas bancarias y de efectivo. Crea hasta 8 cuentas con colores únicos para fácil identificación. Cada cuenta muestra su balance actual que se actualiza automáticamente con cada transacción. Las transferencias entre cuentas se reflejan aquí."
-        icon={<Building2 className="h-5 w-5 text-primary" />}
-      />
 
       {accounts.length === 0 ? (
         <div className="text-center py-12">

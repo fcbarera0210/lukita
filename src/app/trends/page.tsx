@@ -73,12 +73,6 @@ export default function TrendsPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <TrendingUp className="h-8 w-8 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Tendencias Financieras</h1>
-      </div>
-
       {/* Page Description */}
       <CollapsibleDescription
         title="Análisis de Tendencias Financieras"

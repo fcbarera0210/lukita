@@ -101,10 +101,11 @@ export function AccountForm({ account, existingAccounts = [], onSubmit, onCancel
         description: `La cuenta "${data.name}" ha sido ${account ? 'actualizada' : 'creada'} exitosamente`,
       });
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo guardar la cuenta',
+        title: 'Error al guardar cuenta',
+        description: `No se pudo guardar la cuenta: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);

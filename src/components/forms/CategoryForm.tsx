@@ -49,10 +49,11 @@ export function CategoryForm({ category, onSubmit, onCancel, usedIcons = [] }: C
         description: `La categoría "${data.name}" ha sido ${category ? 'actualizada' : 'creada'} exitosamente`,
       });
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       showToast({
         type: 'error',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo guardar la categoría',
+        title: 'Error al guardar categoría',
+        description: `No se pudo guardar la categoría: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);

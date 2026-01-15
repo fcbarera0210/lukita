@@ -16,17 +16,20 @@ Una Progressive Web App (PWA) para gestionar finanzas personales, construida con
 - **Soporte Offline**: Cola de sincronización para transacciones sin conexión
 
 ### 🆕 Novedades v0.4.6 - Fase 5: Mejoras Visuales y UX Completadas ✨
-- **🎨 Dashboard Renovado**: Mensajes de bienvenida aleatorios con gradiente azul-púrpura
-- **💡 Frase Motivadora**: Integración con Advice Slip API con traducción automática al español
-- **🌐 Traducción Inteligente**: Botón para alternar entre español e inglés en las frases motivadoras
+- **🎨 Branding Renovado**: Integración completa de nuevos logos y paleta de colores (degradado verde #96E148 a celeste #00C6DB)
+- **🖼️ Logos Integrados**: Sistema completo de logos (completo, blanco, negro, icono, texto) en toda la aplicación
+- **🎨 Paleta de Colores Actualizada**: Degradado verde-celeste aplicado en elementos de énfasis y color de fuente #375A64
+- **💡 Frase Motivadora Mejorada**: Card de consejos diarios con colores del branding y traducción automática
+- **🔔 Sistema de Toasts Mejorado**: Apilado vertical con mejor visibilidad y mensajes de error más específicos
+- **📋 Cards de Información Reorganizadas**: Títulos prominentes con icono de ojo para expandir/colapsar información
+- **🎯 Consistencia Visual**: Diseño unificado en todas las pantallas con nuevos colores y logos
+- **📱 Metadatos Actualizados**: Open Graph y Twitter Cards configurados con nuevos logos
+- **🌙 Favicon Actualizado**: Nuevo favicon con logo de la aplicación
 - **🎭 Gradientes Universales**: Aplicados a todas las cards (presupuestos, transacciones, cuentas, recurrentes)
-- **🎯 Consistencia Visual**: Paleta de colores unificada en toda la aplicación
 - **📱 Navegación Móvil**: Rediseño completo con mejor organización de íconos
 - **👁️ Textos Informativos**: Colapsibles por defecto para mejor experiencia de usuario
-- **🎨 Fondos Temáticos**: Cards con colores de cuenta aplicados consistentemente
 - **🔧 Micro-interacciones**: Botones con efectos hover y transiciones suaves
 - **⚡ Skeleton Loaders**: Estados de carga elegantes y consistentes
-- **🌙 Transiciones de Tema**: Cambios suaves entre modo claro y oscuro
 - **🎪 Animaciones**: Efectos sutiles en hover y transiciones de estado
 
 ### 🆕 Novedades v0.4.5
