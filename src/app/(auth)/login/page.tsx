@@ -135,10 +135,17 @@ export default function LoginPage() {
     <div className="space-y-6">
       <div className="text-center">
         <div className="flex justify-center mb-2">
+          {/* Logo con texto blanco para tema oscuro */}
           <img 
             src="/svg/logo-lukita-2.svg" 
             alt="Lukita" 
-            className="h-20"
+            className="h-20 dark:block hidden"
+          />
+          {/* Logo con texto oscuro para tema claro */}
+          <img 
+            src="/svg/logo-lukita.svg" 
+            alt="Lukita" 
+            className="h-20 dark:hidden block"
           />
         </div>
         <p className="text-muted-foreground mt-2">
