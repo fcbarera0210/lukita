@@ -10,6 +10,7 @@ import { login, sendPasswordReset } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { Footer } from '@/components/Footer';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -214,6 +215,8 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+      
+      <Footer />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { CollapsibleDescription } from '@/components/CollapsibleDescription';
 import { useFabContext } from '@/components/ConditionalLayout';
+import { Footer } from '@/components/Footer';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -357,6 +358,9 @@ export default function SettingsPage() {
           <p>Lukita v0.4.5</p>
           <p>PWA de finanzas personales</p>
         </div>
+
+        {/* Footer */}
+        <Footer />
 
         {/* Modal de cambio de contraseña */}
         <Modal

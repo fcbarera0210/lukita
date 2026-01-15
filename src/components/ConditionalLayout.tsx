@@ -35,9 +35,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   if (isAuthRoute) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <OfflineIndicator />
-        <main>
+        <main className="flex-1">
           {children}
         </main>
       </div>
